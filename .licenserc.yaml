@@ -1,0 +1,16 @@
+header:
+  license:
+    spdx-id: BSD-3-Clause
+    copyright-owner: Datalayer, Inc.
+    copyright-year: 2023-2024
+    software-name: jupyter-kernel-client
+
+  paths-ignore:
+    - '**/*.ipynb'
+    - '**/*.json'
+    - '**/*.yaml'
+    - '**/*.yml'
+    - '**/.*'
+    - 'LICENSE'
+
+  comment: on-failure

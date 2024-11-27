@@ -1,3 +1,7 @@
+# Copyright (c) 2023-2024 Datalayer, Inc.
+#
+# BSD 3-Clause License
+
 """Grab the global logger instance.
 
 This is a slight modification of traitlets code licensed under BSD 3-Clause License
