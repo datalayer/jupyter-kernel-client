@@ -1,6 +1,6 @@
 # Jupyter Kernel Client (through websocket)
 
-[![Github Actions Status](https://github.com/datalayer/jupyter_kernel_client/workflows/Build/badge.svg)](https://github.com/datalayer/jupyter_kernel_client/actions/workflows/build.yml)
+[![Github Actions Status](https://github.com/datalayer/jupyter-kernel-client/workflows/Build/badge.svg)](https://github.com/datalayer/jupyter-kernel-client/actions/workflows/build.yml)
 
 Jupyter Kernel Client to connect via WebSocket to Jupyter Servers.
 
