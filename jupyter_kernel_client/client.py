@@ -422,7 +422,7 @@ class KernelClient(KernelClientABC):
 
     Arguments
     ---------
-    kernel_ws_endpoint: str
+    endpoint: str
         Kernel websocket endpoint to connect to
     token: str | None
         Authentication token to the server; default None
@@ -440,7 +440,7 @@ class KernelClient(KernelClientABC):
 
     def __init__(  # type:ignore[no-untyped-def]
         self,
-        kernel_ws_endpoint: str,
+        endpoint: str,
         token: str | None = None,
         username: str | None = None,
         timeout: float = REQUEST_TIMEOUT,
@@ -451,7 +451,7 @@ class KernelClient(KernelClientABC):
         """Initialize the client."""
         self.allow_stdin = False  # Will change when the stdin channel opens
         self.shutting_down = False
-        self.kernel_ws_endpoint = kernel_ws_endpoint
+        self.kernel_ws_endpoint = endpoint
         self.token = token
         self.log: logging.Logger = log or get_logger()
         self.kernel_socket: websocket.WebSocketApp | None = None
