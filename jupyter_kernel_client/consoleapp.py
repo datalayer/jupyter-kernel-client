@@ -15,7 +15,11 @@ from .shell import WSTerminalInteractiveShell
 # -----------------------------------------------------------------------------
 
 _examples = """
-jupyter connect # start the WS-based console
+# Start a console connected to a local Jupyter Server running at http://localhost:8888 with a new python kernel.
+jupyter connect --token <server_token>
+
+# Start a console connected to a distant Jupyter Server with a new python kernel.
+jupyter connect --url https://my.jupyter-server.xzy --token <server_token>
 """
 
 # -----------------------------------------------------------------------------
@@ -55,6 +59,8 @@ aliases.update(
     {
         "existing": "ConsoleApp.existing",
         "kernel": "ConsoleApp.kernel_name",
+        "token": "ConsoleApp.token",
+        "url": "ConsoleApp.server_url",
     }
 )
 
@@ -74,11 +80,14 @@ class ConsoleApp(JupyterApp):
 
         This launches a Console application inside a terminal.
 
+        By default it will connect to a local Jupyter Server running at http://localhost:8888
+        and will create a new python kernel.
+
         The Console supports various extra features beyond the traditional
         single-process Terminal IPython shell, such as connecting to an
-        existing ipython session, via:
+        existing jupyter kernel, via:
 
-            jupyter connect --existing
+            jupyter connect --token <server token> --existing <kernel_id>
 
         where the previous session could have been created by another jupyter
         console, or by opening a notebook.
@@ -91,7 +100,7 @@ class ConsoleApp(JupyterApp):
 
     subcommands = Dict()
 
-    server_url = Unicode("", config=True, help="URL to the Jupyter Server.")
+    server_url = Unicode("http://localhost:8888", config=True, help="URL to the Jupyter Server.")
 
     # FIXME it does not support password
     token = Unicode("", config=True, help="Jupyter Server token.")
@@ -110,7 +119,7 @@ class ConsoleApp(JupyterApp):
 
     existing = CUnicode("", config=True, help="""Existing kernel ID to connect to.""")
 
-    kernel_name = Unicode("", config=True, help="""The name of the kernel to connect to.""")
+    kernel_name = Unicode("python3", config=True, help="""The name of the kernel to connect to.""")
 
     kernel_path = Unicode(
         "", config=True, help="API path from server root to the kernel working directory."
@@ -186,7 +195,6 @@ class ConsoleApp(JupyterApp):
         elif self.kernel_client.kernel is None:
             msg = f"Unable to connect to kernel with ID {self.existing}."
             raise RuntimeError(msg)
-
 
     def init_kernel_client(self) -> None:
         """Initialize the kernel client."""
