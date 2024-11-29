@@ -27,10 +27,9 @@ from jupyter_client.clientabc import KernelClientABC
 from jupyter_client.jsonutil import extract_dates
 from jupyter_client.session import Message, Session
 
+from .constants import REQUEST_TIMEOUT
 from .log import get_logger
 from .utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1
-
-REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
 
 
 class WSSession(Session):
@@ -417,7 +416,7 @@ class HBWSChannel(HBChannelABC, WSChannel):
         #     return False
 
 
-class KernelClient(KernelClientABC):
+class KernelWebSocketClient(KernelClientABC):
     """A kernel client to connect to a Jupyter Server via WebSocket.
 
     Arguments
@@ -477,8 +476,7 @@ class KernelClient(KernelClientABC):
         self._control_msg_queue: queue.Queue[dict] = queue.Queue()
 
     def __del__(self):
-        if not self.shutting_down:
-            self.stop_channels()
+        self.stop_channels()
 
     @property
     def kernel(self) -> t.Any:
@@ -550,6 +548,8 @@ class KernelClient(KernelClientABC):
     def stop_channels(self) -> None:
         """Stop the channels for the client."""
         # Terminate thread, close socket and clear queues.
+        if self.shutting_down:
+            return
         self.shutting_down = True
 
         if self.kernel_socket:

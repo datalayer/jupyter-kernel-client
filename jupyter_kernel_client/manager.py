@@ -5,14 +5,18 @@
 from __future__ import annotations
 
 import datetime
+import json
+import os
 import re
 import typing as t
 
 import requests
 from requests.exceptions import HTTPError
-from traitlets import DottedObjectName, Type
+from traitlets import DottedObjectName, Type, default, observe
 from traitlets.config import LoggingConfigurable
+from traitlets.utils.importstring import import_item
 
+from .constants import REQUEST_TIMEOUT
 from .utils import UTC, url_path_join, utcnow
 
 HTTP_PROTOCOL_REGEXP = re.compile(r"^http")
@@ -36,207 +40,330 @@ def fetch(
     if token:
         headers["Authorization"] = f"Bearer {token}"
     if "timeout" not in kwargs:
-        kwargs["timeout"] = 60
+        kwargs["timeout"] = REQUEST_TIMEOUT
     response = f(request, headers=headers, **kwargs)
     response.raise_for_status()
     return response
 
 
-class KernelManager(LoggingConfigurable):
-    """Manages a single kernel remotely."""
+class KernelClient(LoggingConfigurable):
+    """Manages a single remote kernel.
 
-    def __init__(self, server_url: str, token: str, username: str, **kwargs):
-        """Initialize the gateway kernel manager."""
+    Arguments
+    ---------
+    server_url : str
+        Jupyter Server URL
+    token : str
+        Jupyter Server authentication token
+    username : str
+        [optional] Username using the kernel
+    kernel_id : str
+        [optional] Kernel id to connect to
+    client_kwargs : dict[str, Any]
+        [optional] Kernel client factory kwargs
+    """
+
+    def __init__(
+        self,
+        server_url: str,
+        token: str,
+        username: str = os.environ.get("USER", "username"),
+        kernel_id: str | None = None,
+        client_kwargs: dict[str, t.Any] | None = None,
+        **kwargs,
+    ):
+        """Initialize the kernel manager."""
         super().__init__(**kwargs)
         self.server_url = server_url
         self.token = token
         self.username = username
-        self.kernel_url: str = ""
-        self.kernel_id: str = ""
-        self.kernel: dict | None = None
-        # simulate busy/activity markers
-        self.execution_state = "starting"
-        self.last_activity = utcnow()
+        self.__kernel: dict | None = None
+        self.__client: t.Any | None = None
+        self.__client_kwargs = client_kwargs
+
+        if kernel_id:
+            self.__kernel = {
+                "id": kernel_id,
+                "execution_state": "unknown",
+                "last_activity": datetime.datetime.strftime(utcnow(), "%Y-%m-%dT%H:%M:%S.%fZ"),
+            }
+            self.refresh_model()
+
+    @property
+    def execution_state(self) -> str | None:
+        return self.__kernel["execution_state"] if self.__kernel else None
 
     @property
     def has_kernel(self):
         """Has a kernel been started that we are managing."""
-        return self.kernel is not None
+        return self.__kernel is not None
 
-    client_class = DottedObjectName("jupyter_kernel_client.client.KernelClient")
-    client_factory = Type(klass="jupyter_kernel_client.client.KernelClient")
+    @property
+    def id(self) -> str | None:
+        return self.__kernel["id"] if self.__kernel else None
+
+    @property
+    def kernel(self) -> dict[str, t.Any] | None:
+        """The kernel model"""
+        return self.__kernel
+
+    @property
+    def kernel_url(self) -> str | None:
+        return url_path_join(self.server_url, "api/kernels", self.id) if self.id else None
+
+    @property
+    def last_activity(self) -> datetime.datetime | None:
+        return (
+            datetime.datetime.strptime(
+                self.__kernel["last_activity"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            ).replace(tzinfo=UTC)
+            if self.__kernel
+            else None
+        )
+
+    client_class = DottedObjectName("jupyter_kernel_client.client.KernelWebSocketClient")
+    client_factory = Type(klass="jupyter_client.client.KernelClientABC")
+
+    @default("client_factory")
+    def _client_factory_default(self) -> Type:
+        return import_item(self.client_class)
+
+    @observe("client_class")
+    def _client_class_changed(self, change: dict[str, DottedObjectName]) -> None:
+        self.client_factory = import_item(str(change["new"]))
 
     # --------------------------------------------------------------------------
     # create a Client connected to our Kernel
     # --------------------------------------------------------------------------
 
-    def client(self, **kwargs):
-        """Create a client configured to connect to our kernel"""
-        base_ws_url = HTTP_PROTOCOL_REGEXP.sub("ws", self.kernel_url, 1)
+    @property
+    def client(self) -> t.Any:
+        """Create a client configured to connect to our kernel."""
+        if not self.kernel_url:
+            raise RuntimeError("You must first start a kernel before requesting a client.")
 
-        kw: dict[str, t.Any] = {}
-        kw.update(
-            {
+        if not self.__client:
+            base_ws_url = HTTP_PROTOCOL_REGEXP.sub("ws", self.kernel_url, 1)
+
+            kw: dict[str, t.Any] = {
                 "endpoint": url_path_join(base_ws_url, "channels"),
                 "token": self.token,
                 "username": self.username,
                 "log": self.log,
                 "parent": self,
             }
-        )
 
-        # add kwargs last, for manual overrides
-        kw.update(kwargs)
-        return self.client_factory(**kw)
+            # add kwargs last, for manual overrides
+            kw.update(self.__client_kwargs or {})
+            self.__client = self.client_factory(**kw)
 
-    def refresh_model(self, model=None):
+        return self.__client
+
+    def refresh_model(self, timeout: float = REQUEST_TIMEOUT) -> dict[str, t.Any] | None:
         """Refresh the kernel model.
 
-        Parameters
-        ----------
-        model : dict
-            The model from which to refresh the kernel.  If None, the kernel
-            model is fetched from the Gateway server.
+        Returns
+        -------
+            The refreshed model kernel. If None, the kernel
+            does not exist anymore.
+
+        Raises
+        ------
+            RuntimeError : If no kernel managed
         """
-        if model is None:
-            self.log.debug("Request kernel at: %s", self.kernel_url)
-            try:
-                response = fetch(self.kernel_url, token=self.kernel_token, method="GET")
-            except HTTPError as error:
-                if error.response.status_code == 404:
-                    self.log.warning("Kernel not found at: %s", self.kernel_url)
-                    model = None
-                else:
-                    raise
+        if not self.kernel_url:
+            raise RuntimeError("You must first start a kernel.")
+
+        self.log.debug("Request kernel at: %s", self.kernel_url)
+        try:
+            response = fetch(self.kernel_url, token=self.token, method="GET", timeout=timeout)
+        except HTTPError as error:
+            if error.response.status_code == 404:
+                self.log.warning("Kernel not found at: %s", self.kernel_url)
+                model = None
             else:
-                model = response.json()
-            self.log.debug("Kernel retrieved: %s", model)
+                raise
+        else:
+            model = response.json()
+        self.log.debug("Kernel retrieved: %s", model)
 
-        if model:  # Update activity markers
-            self.last_activity = datetime.datetime.strptime(
-                model["last_activity"], "%Y-%m-%dT%H:%M:%S.%fZ"
-            ).replace(tzinfo=UTC)
-            self.execution_state = model["execution_state"]
-
-        self.kernel = model
+        self.__kernel = model
+        if self.__kernel is None and self.__client:
+            self.__client.stop_channels()
+            self.__client = None
         return model
 
     # --------------------------------------------------------------------------
     # Kernel management
     # --------------------------------------------------------------------------
-    def start_kernel(self, **kwargs):
-        """Starts a kernel via HTTP in an asynchronous manner.
+    def start_kernel(
+        self, name: str, path: str | None = None, timeout: float = REQUEST_TIMEOUT
+    ) -> dict[str, t.Any]:
+        """Starts a kernel via HTTP request.
 
         Parameters
         ----------
-        `**kwargs` : optional
-             keyword arguments that are passed down to build the kernel_cmd
-             and launching the kernel (e.g. Popen kwargs).
+            name : str
+                Kernel name
+            path : str
+                [optional] API path from root to the cwd of the kernel
+            timeout : float
+                Request timeout
+        Returns
+        -------
+            The kernel model
         """
-        kernel_name = kwargs.get("kernel_name")
-        kernel = None
-        if kernel_name:
-            response = fetch(
-                "{}/api/jupyter/v1/kernel/{}".format(self.server_url, kernel_name),
-                token=self.token,
+        if self.has_kernel:
+            raise RuntimeError(
+                "A kernel is already started. Shutdown it before starting a new one."
             )
-            kernel = response.json().get("kernel")
-        else:
-            self.log.debug("No kernel name provided. Picking the first available remote kernel…")
-            response = fetch(
-                "{}/api/jupyter/v1/kernels".format(self.server_url),
-                token=self.token,
-            )
-            kernels = response.json().get("kernels", [])
-            if len(kernels) == 0:
-                raise RuntimeError(
-                    "No remote kernel running. Please start one kernel using `jupyter kernel create <ENV_ID>`."
-                )
-            kernel = kernels[0]
-            kernel_name = kernel.get("jupyter_pod_name", "")
 
-        if kernel is None:
-            raise RuntimeError("Unable to find a remote kernel.")
+        response = fetch(
+            f"{self.server_url}/api/kernels",
+            token=self.token,
+            method="POST",
+            json={"name": name, "path": path},
+            timeout=timeout,
+        )
 
-        base_url = kernel["ingress"]
-        # base_ws_url = HTTP_PROTOCOL_REGEXP.sub("ws", base_url, 1)
-        self.kernel_token = kernel.get("token", "")
+        self.__kernel = response.json()
+        if self.__client:
+            self.__client.stop_channels()
+            self.__client = None
+        self.log.info("KernelManager created a new kernel: %s", self.__kernel)
+        return t.cast(dict[str, t.Any], self.__kernel)
 
-        response = fetch(f"{base_url}/api/kernels", token=self.kernel_token)
-        kernels = response.json()
-        kernel_id = kernels[0]["id"]
-
-        self.kernel_id = kernel_id
-        self.kernel_url = url_path_join(base_url, "api/kernels", self.kernel_id)
-        self.kernel = self.refresh_model()
-        msg = f"KernelManager using existing jupyter kernel {kernel_name}"
-        self.log.info(msg)
-
-    def shutdown_kernel(self, now=False, restart=False):
+    def shutdown_kernel(self, now=False, restart=False, timeout: float = REQUEST_TIMEOUT):
         """Attempts to stop the kernel process cleanly via HTTP."""
+        if not self.kernel_url:
+            raise RuntimeError("You must first start a kernel before requesting a client.")
 
-        if self.has_kernel:
-            self.log.debug("Request shutdown kernel at: %s", self.kernel_url)
-            try:
-                response = fetch(self.kernel_url, token=self.kernel_token, method="DELETE")
-                self.log.debug(
-                    "Shutdown kernel response: %d %s",
-                    response.status_code,
-                    response.reason,
-                )
-            except HTTPError as error:
-                if error.response.status_code == 404:
-                    self.log.debug("Shutdown kernel response: kernel not found (ignored)")
-                else:
-                    raise
-
-    def restart_kernel(self, **kw):
-        """Restarts a kernel via HTTP."""
-        if self.has_kernel:
-            assert self.kernel_url is not None
-            kernel_url = self.kernel_url + "/restart"
-            self.log.debug("Request restart kernel at: %s", kernel_url)
-            response = fetch(
-                kernel_url,
-                token=self.kernel_token,
-                method="POST",
-                json={},
-            )
-            self.log.debug("Restart kernel response: %d %s", response.status_code, response.reason)
-
-    def interrupt_kernel(self):
-        """Interrupts the kernel via an HTTP request."""
-        if self.has_kernel:
-            assert self.kernel_url is not None
-            kernel_url = self.kernel_url + "/interrupt"
-            self.log.debug("Request interrupt kernel at: %s", kernel_url)
-            response = fetch(
-                kernel_url,
-                token=self.kernel_token,
-                method="POST",
-                json={},
-            )
+        self.log.debug("Request shutdown kernel at: %s", self.kernel_url)
+        try:
+            response = fetch(self.kernel_url, token=self.token, method="DELETE", timeout=timeout)
             self.log.debug(
-                "Interrupt kernel response: %d %s",
+                "Shutdown kernel response: %d %s",
                 response.status_code,
                 response.reason,
             )
+        except HTTPError as error:
+            if error.response.status_code == 404:
+                self.log.debug("Shutdown kernel response: kernel not found (ignored)")
+            else:
+                raise
+
+    def restart_kernel(self, timeout: float = REQUEST_TIMEOUT, **kw):
+        """Restarts a kernel via HTTP."""
+        if not self.kernel_url:
+            raise RuntimeError("You must first start a kernel before requesting a client.")
+
+        kernel_url = self.kernel_url + "/restart"
+        self.log.debug("Request restart kernel at: %s", kernel_url)
+        response = fetch(kernel_url, token=self.token, method="POST", timeout=timeout)
+        self.log.debug("Restart kernel response: %d %s", response.status_code, response.reason)
+
+    def interrupt_kernel(self, timeout: float = REQUEST_TIMEOUT):
+        """Interrupts the kernel via an HTTP request."""
+        if not self.kernel_url:
+            raise RuntimeError("You must first start a kernel before requesting a client.")
+
+        kernel_url = self.kernel_url + "/interrupt"
+        self.log.debug("Request interrupt kernel at: %s", kernel_url)
+        response = fetch(
+            kernel_url,
+            token=self.token,
+            method="POST",
+            timeout=timeout,
+        )
+        self.log.debug(
+            "Interrupt kernel response: %d %s",
+            response.status_code,
+            response.reason,
+        )
 
     def signal_kernel(self, signum: int) -> None:
         """Send a signal to the kernel."""
-        self.log.warning("Sending signal to kernel through websocket is not supported")
+        self.log.warning("Sending signal to kernel through websocket is not supported.")
 
-    def is_alive(self):
+    def is_alive(self, timeout: float = REQUEST_TIMEOUT):
         """Is the kernel process still running?"""
         if self.has_kernel:
             # Go ahead and issue a request to get the kernel
-            self.kernel = self.refresh_model()
-            self.log.debug("The kernel: %s is alive.", self.kernel)
-            return True
-        else:  # we don't have a kernel
-            self.log.debug("The kernel: %s no longer exists.", self.kernel)
-            return False
+            self.__kernel = self.refresh_model(timeout)
+        # Kernel may have 'disappeared'
+        return self.has_kernel
 
     def cleanup_resources(self, restart=False):
         """Clean up resources when the kernel is shut down"""
         ...
+
+    def execute_interactive(
+        self,
+        code: str,
+        silent: bool = False,
+        store_history: bool = True,
+        user_expressions: dict[str, t.Any] | None = None,
+        allow_stdin: bool | None = None,
+        stop_on_error: bool = True,
+        timeout: float | None = None,
+        output_hook: t.Callable | None = None,
+        stdin_hook: t.Callable | None = None,
+    ) -> dict[str, t.Any]:
+        """Execute code in the kernel interactively
+
+        Output will be redisplayed, and stdin prompts will be relayed as well.
+
+        You can pass a custom output_hook callable that will be called
+        with every IOPub message that is produced instead of the default redisplay.
+
+        Parameters
+        ----------
+        code : str
+            A string of code in the kernel's language.
+
+        silent : bool, optional (default False)
+            If set, the kernel will execute the code as quietly possible, and
+            will force store_history to be False.
+
+        store_history : bool, optional (default True)
+            If set, the kernel will store command history.  This is forced
+            to be False if silent is True.
+
+        user_expressions : dict, optional
+            A dict mapping names to expressions to be evaluated in the user's
+            dict. The expression values are returned as strings formatted using
+            :func:`repr`.
+
+        allow_stdin : bool, optional (default self.allow_stdin)
+            Flag for whether the kernel can send stdin requests to frontends.
+
+        stop_on_error: bool, optional (default True)
+            Flag whether to abort the execution queue, if an exception is encountered.
+
+        timeout: float or None (default: None)
+            Timeout to use when waiting for a reply
+
+        output_hook: callable(msg)
+            Function to be called with output messages.
+            If not specified, output will be redisplayed.
+
+        stdin_hook: callable(msg)
+            Function to be called with stdin_request messages.
+            If not specified, input/getpass will be called.
+
+        Returns
+        -------
+        reply: dict
+            The reply message for this request
+        """
+        return self.client.execute_interactive(
+            code,
+            silent,
+            store_history,
+            user_expressions,
+            allow_stdin,
+            stop_on_error,
+            timeout,
+            output_hook,
+            stdin_hook,
+        )

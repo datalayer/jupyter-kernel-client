@@ -4,7 +4,7 @@
 
 """Jupyter Kernel Client through websocket."""
 
-from .client import KernelClient
+from .manager import KernelClient
 
 __version__ = "0.1.0"
 

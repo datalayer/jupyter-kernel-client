@@ -16,8 +16,8 @@ try:
     from jupyter_console.ptshell import ZMQTerminalInteractiveShell
 
     class WSTerminalInteractiveShell(ZMQTerminalInteractiveShell):
-        manager = Instance("jupyter_kernel_client.manager.KernelManager", allow_none=True)
-        client = Instance("jupyter_kernel_client.client.KernelClient", allow_none=True)
+        manager = Instance("jupyter_kernel_client.manager.KernelClient", allow_none=True)
+        client = Instance("jupyter_kernel_client.client.KernelWebSocketClient", allow_none=True)
 
         @default("banner")
         def _default_banner(self):
