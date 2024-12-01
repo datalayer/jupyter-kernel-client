@@ -1,3 +1,7 @@
+<!--
+  ~
+-->
+
 # Making a new release of jupyter_kernel_client
 
 The extension can be published to `PyPI` manually or using the [Jupyter Releaser](https://github.com/jupyter-server/jupyter_releaser).
