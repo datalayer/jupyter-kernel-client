@@ -4,8 +4,10 @@
 
 """Jupyter Kernel Client through websocket."""
 
-from .manager import KernelClient
+from .client import KernelClient
+from .manager import KernelHttpManager
+from .wsclient import KernelWebSocketClient
 
 __version__ = "0.1.0"
 
-__all__ = ["KernelClient"]
+__all__ = ["KernelClient", "KernelHttpManager", "KernelWebSocketClient"]

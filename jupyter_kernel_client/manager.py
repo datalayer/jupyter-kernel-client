@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 import datetime
-import json
 import os
 import re
 import typing as t
+from time import sleep
 
 import requests
 from requests.exceptions import HTTPError
@@ -17,7 +17,7 @@ from traitlets.config import LoggingConfigurable
 from traitlets.utils.importstring import import_item
 
 from .constants import REQUEST_TIMEOUT
-from .utils import UTC, url_path_join, utcnow
+from .utils import url_path_join, utcnow
 
 HTTP_PROTOCOL_REGEXP = re.compile(r"^http")
 
@@ -46,7 +46,7 @@ def fetch(
     return response
 
 
-class KernelClient(LoggingConfigurable):
+class KernelHttpManager(LoggingConfigurable):
     """Manages a single remote kernel.
 
     Arguments
@@ -90,17 +90,9 @@ class KernelClient(LoggingConfigurable):
             self.refresh_model()
 
     @property
-    def execution_state(self) -> str | None:
-        return self.__kernel["execution_state"] if self.__kernel else None
-
-    @property
     def has_kernel(self):
         """Has a kernel been started that we are managing."""
         return self.__kernel is not None
-
-    @property
-    def id(self) -> str | None:
-        return self.__kernel["id"] if self.__kernel else None
 
     @property
     def kernel(self) -> dict[str, t.Any] | None:
@@ -109,19 +101,13 @@ class KernelClient(LoggingConfigurable):
 
     @property
     def kernel_url(self) -> str | None:
-        return url_path_join(self.server_url, "api/kernels", self.id) if self.id else None
+        if self.kernel:
+            kernel_id = self.kernel["id"]
+            return url_path_join(self.server_url, "api/kernels", kernel_id)
+        else:
+            return None
 
-    @property
-    def last_activity(self) -> datetime.datetime | None:
-        return (
-            datetime.datetime.strptime(
-                self.__kernel["last_activity"], "%Y-%m-%dT%H:%M:%S.%fZ"
-            ).replace(tzinfo=UTC)
-            if self.__kernel
-            else None
-        )
-
-    client_class = DottedObjectName("jupyter_kernel_client.client.KernelWebSocketClient")
+    client_class = DottedObjectName("jupyter_kernel_client.wsclient.KernelWebSocketClient")
     client_factory = Type(klass="jupyter_client.client.KernelClientABC")
 
     @default("client_factory")
@@ -230,15 +216,28 @@ class KernelClient(LoggingConfigurable):
         if self.__client:
             self.__client.stop_channels()
             self.__client = None
-        self.log.info("KernelManager created a new kernel: %s", self.__kernel)
+        self.log.info("KernelHttpManager created a new kernel: %s", self.__kernel)
         return t.cast(dict[str, t.Any], self.__kernel)
 
-    def shutdown_kernel(self, now=False, restart=False, timeout: float = REQUEST_TIMEOUT):
+    def shutdown_kernel(
+        self, now: bool = False, restart: bool = False, timeout: float = REQUEST_TIMEOUT
+    ):
         """Attempts to stop the kernel process cleanly via HTTP."""
         if not self.kernel_url:
             raise RuntimeError("You must first start a kernel before requesting a client.")
 
         self.log.debug("Request shutdown kernel at: %s", self.kernel_url)
+        if not now:
+            self.client.shutdown(restart)
+            count = 10
+            while count:
+                model = self.refresh_model()
+                if model is None:
+                    return
+                count -= 1
+                sleep(timeout / 10.0)
+
+        # If not now and refreshing the model still returns it, try the http way
         try:
             response = fetch(self.kernel_url, token=self.token, method="DELETE", timeout=timeout)
             self.log.debug(
@@ -253,7 +252,7 @@ class KernelClient(LoggingConfigurable):
                 raise
 
     def restart_kernel(self, timeout: float = REQUEST_TIMEOUT, **kw):
-        """Restarts a kernel via HTTP."""
+        """Restarts a kernel via HTTP request."""
         if not self.kernel_url:
             raise RuntimeError("You must first start a kernel before requesting a client.")
 
@@ -296,74 +295,3 @@ class KernelClient(LoggingConfigurable):
     def cleanup_resources(self, restart=False):
         """Clean up resources when the kernel is shut down"""
         ...
-
-    def execute_interactive(
-        self,
-        code: str,
-        silent: bool = False,
-        store_history: bool = True,
-        user_expressions: dict[str, t.Any] | None = None,
-        allow_stdin: bool | None = None,
-        stop_on_error: bool = True,
-        timeout: float | None = None,
-        output_hook: t.Callable | None = None,
-        stdin_hook: t.Callable | None = None,
-    ) -> dict[str, t.Any]:
-        """Execute code in the kernel interactively
-
-        Output will be redisplayed, and stdin prompts will be relayed as well.
-
-        You can pass a custom output_hook callable that will be called
-        with every IOPub message that is produced instead of the default redisplay.
-
-        Parameters
-        ----------
-        code : str
-            A string of code in the kernel's language.
-
-        silent : bool, optional (default False)
-            If set, the kernel will execute the code as quietly possible, and
-            will force store_history to be False.
-
-        store_history : bool, optional (default True)
-            If set, the kernel will store command history.  This is forced
-            to be False if silent is True.
-
-        user_expressions : dict, optional
-            A dict mapping names to expressions to be evaluated in the user's
-            dict. The expression values are returned as strings formatted using
-            :func:`repr`.
-
-        allow_stdin : bool, optional (default self.allow_stdin)
-            Flag for whether the kernel can send stdin requests to frontends.
-
-        stop_on_error: bool, optional (default True)
-            Flag whether to abort the execution queue, if an exception is encountered.
-
-        timeout: float or None (default: None)
-            Timeout to use when waiting for a reply
-
-        output_hook: callable(msg)
-            Function to be called with output messages.
-            If not specified, output will be redisplayed.
-
-        stdin_hook: callable(msg)
-            Function to be called with stdin_request messages.
-            If not specified, input/getpass will be called.
-
-        Returns
-        -------
-        reply: dict
-            The reply message for this request
-        """
-        return self.client.execute_interactive(
-            code,
-            silent,
-            store_history,
-            user_expressions,
-            allow_stdin,
-            stop_on_error,
-            timeout,
-            output_hook,
-            stdin_hook,
-        )

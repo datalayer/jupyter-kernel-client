@@ -7,7 +7,7 @@ from traitlets import CBool, CUnicode, Dict, Type, Unicode
 from traitlets.config import boolean_flag, catch_config_error
 
 from . import __version__
-from .manager import KernelClient
+from .manager import KernelHttpManager
 from .shell import WSTerminalInteractiveShell
 
 # -----------------------------------------------------------------------------
@@ -112,7 +112,7 @@ class ConsoleApp(JupyterApp):
     )
 
     kernel_manager_class = Type(
-        default_value=KernelClient,
+        default_value=KernelHttpManager,
         config=True,
         help="The kernel manager class to use.",
     )
