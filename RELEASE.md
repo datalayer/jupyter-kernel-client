@@ -6,8 +6,8 @@ The extension can be published to `PyPI` manually or using the [Jupyter Releaser
 
 ### Python package
 
-This extension can be distributed as Python
-packages. All of the Python
+This repository can be distributed as Python
+package. All of the Python
 packaging instructions in the `pyproject.toml` file to wrap your extension in a
 Python package. Before generating a package, we first need to install `build`.
 
@@ -20,8 +20,6 @@ To create a Python source package (`.tar.gz`) and the binary package (`.whl`) in
 ```bash
 python -m build
 ```
-
-> `python setup.py sdist bdist_wheel` is deprecated and will not work for this package.
 
 Then to upload the package to PyPI, do:
 

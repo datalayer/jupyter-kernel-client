@@ -1,4 +1,4 @@
-# Jupyter Kernel Client (through websocket)
+# Jupyter Kernel Client (through http)
 
 [![Github Actions Status](https://github.com/datalayer/jupyter-kernel-client/workflows/Build/badge.svg)](https://github.com/datalayer/jupyter-kernel-client/actions/workflows/build.yml)
 
@@ -14,6 +14,44 @@ To install the extension, execute:
 
 ```bash
 pip install jupyter_kernel_client
+```
+
+## Usage
+
+1. Start a jupyter server (or JupyterLab or Jupyter Notbook)
+
+```sh
+jupyter server
+```
+
+1. Note down the URL (usually `http://localhost:8888`) and the server token
+
+1. Open a Python terminal
+
+1. Execute the following snippet
+
+```py
+import os
+from platform import node
+from jupyter_kernel_client import KernelClient
+
+with KernelClient(server_url="http://localhost:8888", token="...") as kernel:
+    reply = kernel.execute(
+        """import os
+from platform import node
+print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
+"""
+    )
+
+    assert reply["execution_count"] == 1
+    assert reply["outputs"] == [
+        {
+            "output_type": "stream",
+            "name": "stdout",
+            "text": f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.\n",
+        }
+    ]
+    assert reply["status"] == "ok"
 ```
 
 ## Uninstall
@@ -57,12 +95,6 @@ To run the python tests, use:
 
 ```bash
 pytest
-
-# To test a specific file
-pytest jupyter_kernel_client/tests/test_handlers.py
-
-# To run a specific test
-pytest jupyter_kernel_client/tests/test_handlers.py -k "test_get"
 ```
 
 ### Development uninstall
