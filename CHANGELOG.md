@@ -4,6 +4,8 @@
 
 ## 0.1.1
 
+:warning: Not published
+
 ([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/66064f9f7afe59b2450fc3a15a2e78f4eb606852))
 
 First version

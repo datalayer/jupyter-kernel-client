@@ -76,7 +76,7 @@ class KernelClient(LoggingConfigurable):
             else None
         )
 
-    def execute(
+    def execute(  # noqa: C901
         self,
         code: str,
         silent: bool = False,
@@ -88,11 +88,6 @@ class KernelClient(LoggingConfigurable):
         stdin_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
     ) -> dict[str, t.Any]:
         """Execute code in the kernel interactively
-
-        Output will be redisplayed, and stdin prompts will be relayed as well.
-
-        You can pass a custom output_hook callable that will be called
-        with every IOPub message that is produced instead of the default redisplay.
 
         Args:
             code: A string of code in the kernel's language.
@@ -109,7 +104,6 @@ class KernelClient(LoggingConfigurable):
                 Flag whether to abort the execution queue, if an exception is encountered.
             timeout:
                 Timeout to use when waiting for a reply
-
             stdin_hook:
                 Function to be called with stdin_request messages.
                 If not specified, input/getpass will be called.
@@ -194,6 +188,77 @@ class KernelClient(LoggingConfigurable):
             "outputs": outputs,
             "status": reply_content["status"],
         }
+
+    def execute_interactive(
+        self,
+        code: str,
+        silent: bool = False,
+        store_history: bool = True,
+        user_expressions: dict[str, t.Any] | None = None,
+        allow_stdin: bool | None = None,
+        stop_on_error: bool = True,
+        timeout: float | None = None,
+        output_hook: t.Callable | None = None,
+        stdin_hook: t.Callable | None = None,
+    ) -> dict[str, t.Any]:
+        """Execute code in the kernel with low-level API
+
+        Output will be redisplayed, and stdin prompts will be relayed as well.
+
+        You can pass a custom output_hook callable that will be called
+        with every IOPub message that is produced instead of the default redisplay.
+
+        Parameters
+        ----------
+        code : str
+            A string of code in the kernel's language.
+
+        silent : bool, optional (default False)
+            If set, the kernel will execute the code as quietly possible, and
+            will force store_history to be False.
+
+        store_history : bool, optional (default True)
+            If set, the kernel will store command history.  This is forced
+            to be False if silent is True.
+
+        user_expressions : dict, optional
+            A dict mapping names to expressions to be evaluated in the user's
+            dict. The expression values are returned as strings formatted using
+            :func:`repr`.
+
+        allow_stdin : bool, optional (default self.allow_stdin)
+            Flag for whether the kernel can send stdin requests to frontends.
+
+        stop_on_error: bool, optional (default True)
+            Flag whether to abort the execution queue, if an exception is encountered.
+
+        timeout: float or None (default: None)
+            Timeout to use when waiting for a reply
+
+        output_hook: callable(msg)
+            Function to be called with output messages.
+            If not specified, output will be redisplayed.
+
+        stdin_hook: callable(msg)
+            Function to be called with stdin_request messages.
+            If not specified, input/getpass will be called.
+
+        Returns
+        -------
+        reply: dict
+            The reply message for this request
+        """
+        return self._manager.client.execute_interactive(
+            code,
+            silent=silent,
+            store_history=store_history,
+            user_expressions=user_expressions,
+            allow_stdin=allow_stdin,
+            stop_on_error=stop_on_error,
+            timeout=timeout,
+            output_hook=output_hook,
+            stdin_hook=stdin_hook,
+        )
 
     def interrupt(self, timeout: float = REQUEST_TIMEOUT) -> None:
         """Interrupts the kernel."""
