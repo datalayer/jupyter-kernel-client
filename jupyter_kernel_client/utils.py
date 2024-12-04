@@ -11,6 +11,8 @@ Code source:
 - https://github.com/jupyter-server/jupyter_server/blame/v2.12.0/jupyter_server/_tz.py
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone, tzinfo
 from typing import Any, List
 

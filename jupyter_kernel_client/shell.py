@@ -2,6 +2,8 @@
 #
 # BSD 3-Clause License
 
+from __future__ import annotations
+
 import asyncio
 
 from jupyter_core.utils import ensure_async
