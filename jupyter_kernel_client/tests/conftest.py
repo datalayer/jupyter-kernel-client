@@ -8,7 +8,7 @@ import signal
 import socket
 import typing as t
 from contextlib import closing
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, TimeoutExpired
 
 import pytest
 import requests
@@ -57,14 +57,18 @@ def jupyter_server() -> t.Generator[tuple[str, str], t.Any, t.Any]:
     finally:
         jp_server.send_signal(signal.SIGINT)
         jp_server.send_signal(signal.SIGINT)
-        out, err = jp_server.communicate()
+        try:
+            out, err = jp_server.communicate(timeout=5)
 
-        def print_stream(stream):
-            for line in stream.split(b"\n"):
-                if len(line) >= 2 and line[0] == b"[":
-                    LOG.get(line[1], logging.debug)(line.decode())
-                else:
-                    logging.info(line.decode())
+            def print_stream(stream):
+                for line in stream.split(b"\n"):
+                    if len(line) >= 2 and line[0] == b"[":
+                        LOG.get(line[1], logging.debug)(line.decode())
+                    else:
+                        logging.info(line.decode())
 
-        print_stream(out)
-        print_stream(err)
+            print_stream(out)
+            print_stream(err)
+        except TimeoutExpired:
+            if jp_server.poll() is None:
+                jp_server.terminate()
