@@ -12,7 +12,12 @@ Jupyter Kernel Client to connect via WebSocket to Jupyter Servers.
 
 ## Requirements
 
-- Jupyter Server
+- Jupyter Server with ipykernel running somewhere.
+  You can install those packages using:
+
+```sh
+pip install jupyter-server ipykernel
+```
 
 ## Install
 
