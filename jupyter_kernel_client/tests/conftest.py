@@ -13,8 +13,6 @@ from subprocess import PIPE, Popen, TimeoutExpired
 import pytest
 import requests
 
-LOG = {b"C": logging.critical, b"W": logging.warning, b"I": logging.info, b"D": logging.debug}
-
 
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
@@ -25,11 +23,7 @@ def find_free_port():
 
 def print_stream(stream):
     for line in stream.split(b"\n"):
-        print(line)
-        if len(line) >= 2 and line[0] == b"[":
-            LOG.get(line[1], logging.debug)(line.decode())
-        else:
-            logging.info(line.decode())
+        print(line.decode())
 
 
 @pytest.fixture
