@@ -23,6 +23,15 @@ def find_free_port():
         return s.getsockname()[1]
 
 
+def print_stream(stream):
+    for line in stream.split(b"\n"):
+        print(line)
+        if len(line) >= 2 and line[0] == b"[":
+            LOG.get(line[1], logging.debug)(line.decode())
+        else:
+            logging.info(line.decode())
+
+
 @pytest.fixture
 def jupyter_server() -> t.Generator[tuple[str, str], t.Any, t.Any]:
     port = find_free_port()
@@ -57,18 +66,16 @@ def jupyter_server() -> t.Generator[tuple[str, str], t.Any, t.Any]:
     finally:
         jp_server.send_signal(signal.SIGINT)
         jp_server.send_signal(signal.SIGINT)
+        failed_to_terminate = True
         try:
             out, err = jp_server.communicate(timeout=5)
-
-            def print_stream(stream):
-                for line in stream.split(b"\n"):
-                    if len(line) >= 2 and line[0] == b"[":
-                        LOG.get(line[1], logging.debug)(line.decode())
-                    else:
-                        logging.info(line.decode())
-
+            failed_to_terminate = False
             print_stream(out)
             print_stream(err)
         except TimeoutExpired:
             if jp_server.poll() is None:
                 jp_server.terminate()
+
+        if failed_to_terminate:
+            print_stream(b"".join(iter(jp_server.stdout.readline, b"")))
+            print_stream(b"".join(iter(jp_server.stderr.readline, b"")))
