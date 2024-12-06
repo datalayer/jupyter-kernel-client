@@ -42,6 +42,7 @@ jobs:
           rm -rf "jupyter_kernel_client"
 
       - uses: actions/upload-artifact@v4
+        if: startsWith(matrix.os, 'ubuntu')
         with:
           name: my_server_extension-sdist
           path: my_server_extension.tar.gz
