@@ -35,7 +35,7 @@ file = "LICENSE"
 jupyter-connect = "jupyter_kernel_client.consoleapp:main"
 
 [project.urls]
-Home = "https://github.com/datalayer/jupyter_kernel_client"
+Home = "https://github.com/datalayer/jupyter-kernel-client"
 
 [tool.hatch.version]
 path = "jupyter_kernel_client/__init__.py"
