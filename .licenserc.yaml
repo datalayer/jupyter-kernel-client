@@ -1,9 +1,10 @@
 header:
   license:
-    spdx-id: BSD-3-Clause
-    copyright-owner: Datalayer, Inc.
-    copyright-year: 2023-2024
-    software-name: jupyter-kernel-client
+    content: |
+      Copyright (c) 2023-2024 Datalayer, Inc.
+
+      BSD 3-Clause License
+
 
   paths-ignore:
     - '**/*.ipynb'

@@ -1,3 +1,7 @@
+# Copyright (c) 2023-2024 Datalayer, Inc.
+#
+# BSD 3-Clause License
+
 from __future__ import annotations
 
 import datetime
@@ -12,12 +16,110 @@ from .manager import KernelHttpManager
 from .utils import UTC
 
 
+def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> None:
+    """Callback on messages captured during a code snippet execution.
+
+    Example:
+        This callback is meant to be used with ``KernelClient.execute_interactive``::
+
+            from functools from partial
+            from jupyter_kernel_client import KernelClient
+            with KernelClient(server_url, token) as kernel:
+                outputs = []
+                kernel.execute_interactive(
+                    "print('hello')",
+                    output_hook=partial(output_hook, outputs)
+                )
+                print(outputs)
+
+    Args:
+        outputs: List in which to append the output
+        message: A kernel message
+    """
+    msg_type = message["header"]["msg_type"]
+    content = message["content"]
+
+    output = None
+    # Taken from https://github.com/jupyter/nbformat/blob/v5.10.4/nbformat/v4/nbbase.py#L73
+    if msg_type == "execute_result":
+        output = {
+            "output_type": msg_type,
+            "metadata": content["metadata"],
+            "data": content["data"],
+            "execution_count": content["execution_count"],
+        }
+    elif msg_type == "stream":
+        output = {
+            "output_type": msg_type,
+            "name": content["name"],
+            "text": content["text"],
+        }
+    elif msg_type == "display_data":
+        output = {
+            "output_type": msg_type,
+            "metadata": content["metadata"],
+            "data": content["data"],
+            "transient": content["transient"],
+        }
+    elif msg_type == "error":
+        output = {
+            "output_type": msg_type,
+            "ename": content["ename"],
+            "evalue": content["evalue"],
+            "traceback": content["traceback"],
+        }
+    elif msg_type == "clear_output":
+        # Ignore wait as we run without display
+        outputs.clear()
+    elif msg_type == "update_display_data":
+        display_id = content.get("transient", {}).get("display_id")
+        if display_id:
+            for obsolete_update in filter(
+                lambda o: o.get("transient", {}).get("display_id") == display_id, outputs
+            ):
+                obsolete_update["metadata"] = content["metadata"]
+                obsolete_update["data"] = content["data"]
+
+    if output:
+        outputs.append(output)
+
+
 class KernelClient(LoggingConfigurable):
     """Jupyter Kernel Client
 
-    By default it connects to an Jupyter Server through the following arguments.
+    Example:
+        You need to start JupyterLab or Jupyter notebook. You must write down
+        the server URL and the authentication token from the link looking like::
 
-    Those arguments may be different if the ``kernel_manager_class`` is modified
+            http://localhost:8888/...?token=abcedfgh...
+            <--  server URL   -->           <--token-->
+
+        In another terminal, start a Python console. In which you can test the
+        following snippet::
+
+            import os
+            from platform import node
+            from jupyter_kernel_client import KernelClient
+
+            with KernelClient(server_url="http://localhost:8888", token="abcedfgh...") as kernel:
+                reply = kernel.execute(
+                    "import os\nfrom platform import node\nprint(f\"Hey {os.environ.get('USER', 'John Smith')} from {node()}.\")"
+                )
+
+                assert reply["execution_count"] == 1
+                assert reply["outputs"] == [
+                    {
+                        "output_type": "stream",
+                        "name": "stdout",
+                        "text": f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.\n",
+                    }
+                ]
+                assert reply["status"] == "ok"
+
+    Note:
+        By default it connects to an Jupyter Server through the following arguments.
+
+        Those arguments may be different if the ``kernel_manager_class`` is modified.
 
     Args:
         server_url: str
@@ -76,29 +178,29 @@ class KernelClient(LoggingConfigurable):
             else None
         )
 
-    def execute(  # noqa: C901
+    def execute(
         self,
         code: str,
         silent: bool = False,
         store_history: bool = True,
         user_expressions: dict[str, t.Any] | None = None,
-        allow_stdin: bool | None = None,
+        allow_stdin: bool | None = False,
         stop_on_error: bool = True,
         timeout: float = REQUEST_TIMEOUT,
         stdin_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
     ) -> dict[str, t.Any]:
-        """Execute code in the kernel interactively
+        """Execute code in the kernel
 
         Args:
             code: A string of code in the kernel's language.
-            silent: optional (default False) If set, the kernel will execute the code as quietly possible, and
-                will force store_history to be False.
-            store_history: optional (default True) If set, the kernel will store command history.  This is forced
-                to be False if silent is True.
-            user_expressions: optional, A dict mapping names to expressions to be evaluated in the user's
-                dict. The expression values are returned as strings formatted using
+            silent: optional (default False) If set, the kernel will execute the code as quietly
+                possible, and will force store_history to be False.
+            store_history: optional (default True) If set, the kernel will store command history.
+                This is forced to be False if silent is True.
+            user_expressions: optional, A dict mapping names to expressions to be evaluated in the
+                user's dict. The expression values are returned as strings formatted using
                 :func:`repr`.
-            allow_stdin: optional (default self.allow_stdin)
+            allow_stdin: optional (default False)
                 Flag for whether the kernel can send stdin requests to frontends.
             stop_on_error: optional (default True)
                 Flag whether to abort the execution queue, if an exception is encountered.
@@ -114,54 +216,6 @@ class KernelClient(LoggingConfigurable):
             The outputs will follow the structure of nbformat outputs.
         """
         outputs = []
-
-        def output_hook(outputs: list[dict], msg: dict) -> None:
-            msg_type = msg["header"]["msg_type"]
-            content = msg["content"]
-
-            output = None
-            # Taken from https://github.com/jupyter/nbformat/blob/v5.10.4/nbformat/v4/nbbase.py#L73
-            if msg_type == "execute_result":
-                output = {
-                    "output_type": msg_type,
-                    "metadata": content["metadata"],
-                    "data": content["data"],
-                    "execution_count": content["execution_count"],
-                }
-            elif msg_type == "stream":
-                output = {
-                    "output_type": msg_type,
-                    "name": content["name"],
-                    "text": content["text"],
-                }
-            elif msg_type == "display_data":
-                output = {
-                    "output_type": msg_type,
-                    "metadata": content["metadata"],
-                    "data": content["data"],
-                    "transient": content["transient"],
-                }
-            elif msg_type == "error":
-                output = {
-                    "output_type": msg_type,
-                    "ename": content["ename"],
-                    "evalue": content["evalue"],
-                    "traceback": content["traceback"],
-                }
-            elif msg_type == "clear_output":
-                # Ignore wait as we run without display
-                outputs.clear()
-            elif msg_type == "update_display_data":
-                display_id = content.get("transient", {}).get("display_id")
-                if display_id:
-                    for obsolete_update in filter(
-                        lambda o: o.get("transient", {}).get("display_id") == display_id, outputs
-                    ):
-                        obsolete_update["metadata"] = content["metadata"]
-                        obsolete_update["data"] = content["data"]
-
-            if output:
-                outputs.append(output)
 
         reply = self._manager.client.execute_interactive(
             code,
@@ -197,9 +251,9 @@ class KernelClient(LoggingConfigurable):
         user_expressions: dict[str, t.Any] | None = None,
         allow_stdin: bool | None = None,
         stop_on_error: bool = True,
-        timeout: float | None = None,
-        output_hook: t.Callable | None = None,
-        stdin_hook: t.Callable | None = None,
+        timeout: float | None = REQUEST_TIMEOUT,
+        output_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
+        stdin_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
     ) -> dict[str, t.Any]:
         """Execute code in the kernel with low-level API
 
@@ -208,44 +262,32 @@ class KernelClient(LoggingConfigurable):
         You can pass a custom output_hook callable that will be called
         with every IOPub message that is produced instead of the default redisplay.
 
-        Parameters
-        ----------
-        code : str
-            A string of code in the kernel's language.
+        Args:
+            code: A string of code in the kernel's language.
+            silent: optional (default False)
+                If set, the kernel will execute the code as quietly possible, and
+                will force store_history to be False.
+            store_history: optional (default True)
+                If set, the kernel will store command history.  This is forced
+                to be False if silent is True.
+            user_expressions: optional
+                A dict mapping names to expressions to be evaluated in the user's
+                dict. The expression values are returned as strings formatted using
+                :func:`repr`.
+            allow_stdin: optional
+                Flag for whether the kernel can send stdin requests to frontends.
+            stop_on_error: optional (default True)
+                Flag whether to abort the execution queue, if an exception is encountered.
+            timeout: (default: REQUEST_TIMEOUT)
+                Timeout to use when waiting for a reply
+            output_hook:
+                Function to be called with output messages.
+                If not specified, output will be redisplayed.
+            stdin_hook:
+                Function to be called with stdin_request messages.
+                If not specified, input/getpass will be called.
 
-        silent : bool, optional (default False)
-            If set, the kernel will execute the code as quietly possible, and
-            will force store_history to be False.
-
-        store_history : bool, optional (default True)
-            If set, the kernel will store command history.  This is forced
-            to be False if silent is True.
-
-        user_expressions : dict, optional
-            A dict mapping names to expressions to be evaluated in the user's
-            dict. The expression values are returned as strings formatted using
-            :func:`repr`.
-
-        allow_stdin : bool, optional (default self.allow_stdin)
-            Flag for whether the kernel can send stdin requests to frontends.
-
-        stop_on_error: bool, optional (default True)
-            Flag whether to abort the execution queue, if an exception is encountered.
-
-        timeout: float or None (default: None)
-            Timeout to use when waiting for a reply
-
-        output_hook: callable(msg)
-            Function to be called with output messages.
-            If not specified, output will be redisplayed.
-
-        stdin_hook: callable(msg)
-            Function to be called with stdin_request messages.
-            If not specified, input/getpass will be called.
-
-        Returns
-        -------
-        reply: dict
+        Returns:
             The reply message for this request
         """
         return self._manager.client.execute_interactive(
@@ -292,7 +334,6 @@ class KernelClient(LoggingConfigurable):
             path: Current working directory of the kernel relative to the server root path
                 It may not apply depending on the kernel provider.
             timeout: Request timeout in seconds
-
         """
         if not self._manager.has_kernel:
             self._manager.start_kernel(name=name, path=path, timeout=timeout)

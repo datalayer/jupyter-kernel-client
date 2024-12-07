@@ -1,3 +1,7 @@
+# Copyright (c) 2023-2024 Datalayer, Inc.
+#
+# BSD 3-Clause License
+
 [build-system]
 requires = ["hatchling~=1.21"]
 build-backend = "hatchling.build"
@@ -20,7 +24,7 @@ dependencies = ["jupyter_core", "jupyter_client>=7.4.4", "requests", "traitlets>
 
 [project.optional-dependencies]
 console = ["jupyter_console"]
-test = ["jupyter_server>=1.6,<3", "pytest>=7.0", "pytest-jupyter[server]>=0.6"]
+test = ["ipykernel", "jupyter_server>=1.6,<3", "pytest>=7.0"]
 lint = ["mdformat>0.7", "mdformat-gfm>=0.3.5", "ruff"]
 typing = ["mypy>=0.990"]
 
