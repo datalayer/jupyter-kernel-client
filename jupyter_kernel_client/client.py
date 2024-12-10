@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import typing as t
 from functools import partial
 
@@ -14,6 +15,8 @@ from traitlets.config import LoggingConfigurable
 from .constants import REQUEST_TIMEOUT
 from .manager import KernelHttpManager
 from .utils import UTC
+
+logger = logging.getLogger("jupyter_kernel_client")
 
 
 def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> set[int]:  # noqa: C901
@@ -154,10 +157,14 @@ class KernelClient(LoggingConfigurable):
         help="The kernel manager class to use.",
     )
 
-    def __init__(self, kernel_id: str | None = None, **kwargs) -> None:
-        super().__init__()
-        self._own_kernel = bool(kernel_id)
+    def __init__(
+        self, kernel_id: str | None = None, log: logging.Logger | None = None, **kwargs
+    ) -> None:
+        super().__init__(log=log or logger)
         self._manager = self.kernel_manager_class(parent=self, kernel_id=kernel_id, **kwargs)
+        # Set it after the manager as if a kernel_id is provided,
+        # we will try to connect to it.
+        self._own_kernel = self._manager.kernel is None
 
     def __del__(self) -> None:
         self.stop()
