@@ -8,6 +8,30 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.3.1
+
+([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.3.0...f2a2cce9407800ab7f98fddcd43513987d944c52))
+
+### Enhancements made
+
+- Add concurrency configuration on CI job [#6](https://github.com/datalayer/jupyter-kernel-client/pull/6) ([@fcollonval](https://github.com/fcollonval))
+
+### Bugs fixed
+
+- Fix handling (not) owned kernel [#8](https://github.com/datalayer/jupyter-kernel-client/pull/8) ([@fcollonval](https://github.com/fcollonval))
+
+### Documentation improvements
+
+- Add pypi badge [#7](https://github.com/datalayer/jupyter-kernel-client/pull/7) ([@fcollonval](https://github.com/fcollonval))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2024-12-07&to=2024-12-10&type=c))
+
+[@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2024-12-07..2024-12-10&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.3.0
 
 ([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.2.0...c768f690798c6b0b3ab5c28214988b688dceb6e1))
@@ -26,8 +50,6 @@
 ([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2024-12-04&to=2024-12-07&type=c))
 
 [@dependabot](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Adependabot+updated%3A2024-12-04..2024-12-07&type=Issues) | [@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2024-12-04..2024-12-07&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.2.0
 

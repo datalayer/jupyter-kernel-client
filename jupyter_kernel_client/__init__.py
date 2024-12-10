@@ -8,6 +8,6 @@ from .client import KernelClient
 from .manager import KernelHttpManager
 from .wsclient import KernelWebSocketClient
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = ["KernelClient", "KernelHttpManager", "KernelWebSocketClient"]
