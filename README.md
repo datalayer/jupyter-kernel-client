@@ -7,6 +7,7 @@
 # Jupyter Kernel Client (through http)
 
 [![Github Actions Status](https://github.com/datalayer/jupyter-kernel-client/workflows/Build/badge.svg)](https://github.com/datalayer/jupyter-kernel-client/actions/workflows/build.yml)
+[![PyPI - Version](https://img.shields.io/pypi/v/jupyter-kernel-client)](https://pypi.org/project/jupyter-kernel-client)
 
 Jupyter Kernel Client to connect via WebSocket to Jupyter Servers.
 
