@@ -23,22 +23,22 @@ classifiers = [
 dependencies = ["jupyter_core", "jupyter_client>=7.4.4", "requests", "traitlets>=5.3", "websocket-client"]
 
 [project.optional-dependencies]
-console = ["jupyter_console"]
+konsole = ["jupyter_console"]
 test = ["ipykernel", "jupyter_server>=1.6,<3", "pytest>=7.0"]
 lint = ["mdformat>0.7", "mdformat-gfm>=0.3.5", "ruff"]
 typing = ["mypy>=0.990"]
 
+[project.scripts]
+jupyter-konsole = "jupyter_kernel_client.konsoleapp:main"
+
 [project.license]
 file = "LICENSE"
-
-[project.scripts]
-jupyter-connect = "jupyter_kernel_client.consoleapp:main"
 
 [project.urls]
 Home = "https://github.com/datalayer/jupyter-kernel-client"
 
 [tool.hatch.version]
-path = "jupyter_kernel_client/__init__.py"
+path = "jupyter_kernel_client/__version__.py"
 
 [tool.pytest.ini_options]
 filterwarnings = [

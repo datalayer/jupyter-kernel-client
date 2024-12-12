@@ -32,31 +32,38 @@ pip install jupyter_kernel_client
 
 ### Kernel Client
 
-1. Start a jupyter server (or JupyterLab or Jupyter Notebook)
+1. Start a Jupyter Server (or JupyterLab or Jupyter Notebook)
 
 ```sh
 jupyter server
+# ...
+#    To access the server, open this file in a browser:
+#        file:///home/echarles/.local/share/jupyter/runtime/jpserver-910631-open.html
+#    Or copy and paste one of these URLs:
+#        http://localhost:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
+#        http://127.0.0.1:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
 ```
 
-2. Note down the URL (usually `http://localhost:8888`) and the server token
+2. Note down the URL (usually `http://localhost:8888`) and the Server Token (in the above example it will be `aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b`)
 
-3. Open a Python terminal
+3. Launch `python` in a terminal.
 
 4. Execute the following snippet
 
 ```py
 import os
+
 from platform import node
 from jupyter_kernel_client import KernelClient
 
-with KernelClient(server_url="http://localhost:8888", token="...") as kernel:
+
+with KernelClient(server_url="http://localhost:8888", token="aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b") as kernel:
     reply = kernel.execute(
         """import os
 from platform import node
 print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
 """
     )
-
     assert reply["execution_count"] == 1
     assert reply["outputs"] == [
         {
@@ -72,31 +79,37 @@ print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
 
 This package can be used to open a Jupyter Console to a Jupyter Kernel through HTTP 🐣.
 
-1. Install the optional dependencies:
+1. Install the optional dependencies.
 
 ```sh
-pip install jupyter-kernel-client[console]
+pip install jupyter-kernel-client[konsole]
 ```
 
-
-2. Start a jupyter server (or JupyterLab or Jupyter Notebook)
+2. Start a Jupyter Server (or JupyterLab or Jupyter Notebook).
 
 ```sh
 jupyter server
+# ...
+#    To access the server, open this file in a browser:
+#        file:///home/echarles/.local/share/jupyter/runtime/jpserver-910631-open.html
+#    Or copy and paste one of these URLs:
+#        http://localhost:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
+#        http://127.0.0.1:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
 ```
 
-3. Note down the URL (usually `http://localhost:8888`) and the server token
-4. Start the console
+3. Note down the URL (usually `http://localhost:8888`) and the Server Token (in the above example it will be `aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b`)
+
+4. Start the console.
 
 ```sh
-jupyter-connect --url http://localhost:8888 --token abcdef...
+jupyter-konsole --url http://localhost:8888 --token aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
 ```
 
-Example of console session:
+Example of console session.
 
-```
-❯ jupyter-connect --token 0d2004a3f836e3dbb01a035c66a43b6fa06e44b004599835
-[ConsoleApp] KernelHttpManager created a new kernel: ...
+```bash
+❯ jupyter-konsole --url http://localhost:8888 --token 0d2004a3f836e3dbb01a035c66a43b6fa06e44b004599835
+[KonsoleApp] KernelHttpManager created a new kernel: ...
 Jupyter Kernel console 0.2.0
 
 Python 3.12.7 | packaged by conda-forge | (main, Oct  4 2024, 16:05:46) [GCC 13.3.0]
@@ -115,15 +128,6 @@ To remove the extension, execute:
 
 ```bash
 pip uninstall jupyter_kernel_client
-```
-
-## Troubleshoot
-
-If you are seeing the frontend extension, but it is not working, check
-that the server extension is enabled:
-
-```bash
-jupyter server extension list
 ```
 
 ## Contributing
