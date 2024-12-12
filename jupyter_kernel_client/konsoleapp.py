@@ -60,7 +60,7 @@ flags.update(
     )
 )
 
-# copy flags from mixin
+# copy aliases from mixin
 aliases = dict(base_aliases)
 aliases.update(
     {
@@ -70,6 +70,7 @@ aliases.update(
         "url": "KonsoleApp.server_url",
     }
 )
+
 
 # -----------------------------------------------------------------------------
 # Classes

@@ -4,25 +4,18 @@
   ~ BSD 3-Clause License
 -->
 
-# Jupyter Kernel Client (through http)
+[![Datalayer](https://assets.datalayer.tech/datalayer-25.svg)](https://datalayer.io)
+
+[![Become a Sponsor](https://img.shields.io/static/v1?label=Become%20a%20Sponsor&message=%E2%9D%A4&logo=GitHub&style=flat&color=1ABC9C)](https://github.com/sponsors/datalayer)
+
+# Jupyter Kernel Client (via WebSocket and HTTP)
 
 [![Github Actions Status](https://github.com/datalayer/jupyter-kernel-client/workflows/Build/badge.svg)](https://github.com/datalayer/jupyter-kernel-client/actions/workflows/build.yml)
 [![PyPI - Version](https://img.shields.io/pypi/v/jupyter-kernel-client)](https://pypi.org/project/jupyter-kernel-client)
 
-Jupyter Kernel Client to connect via WebSocket to Jupyter Servers.
+Jupyter Kernel Client allows you to connect via WebSocket and HTTP to Jupyter Kernels. It also provide a easy to use interactive Konsole (console for **K**ernels).
 
-## Requirements
-
-- Jupyter Server with ipykernel running somewhere.
-  You can install those packages using:
-
-```sh
-pip install jupyter-server ipykernel
-```
-
-## Install
-
-To install the extension, execute:
+To install the library, run the following command.
 
 ```bash
 pip install jupyter_kernel_client
@@ -30,25 +23,21 @@ pip install jupyter_kernel_client
 
 ## Usage
 
-### Kernel Client
-
-1. Start a Jupyter Server (or JupyterLab or Jupyter Notebook)
+Check you have a Jupyter Server with ipykernel running somewhere. You can install those packages using:
 
 ```sh
-jupyter server
-# ...
-#    To access the server, open this file in a browser:
-#        file:///home/echarles/.local/share/jupyter/runtime/jpserver-910631-open.html
-#    Or copy and paste one of these URLs:
-#        http://localhost:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
-#        http://127.0.0.1:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
+pip install jupyter-server ipykernel
 ```
 
-2. Note down the URL (usually `http://localhost:8888`) and the Server Token (in the above example it will be `aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b`)
+### Kernel Client
 
-3. Launch `python` in a terminal.
+2. Start a Jupyter Server.
 
-4. Execute the following snippet
+```sh
+jupyter server --port 8888 --IdentityProvider.token MY_TOKEN
+```
+
+3. Launch `python` in a terminal and execute the following snippet (update the server_url and token).
 
 ```py
 import os
@@ -57,7 +46,7 @@ from platform import node
 from jupyter_kernel_client import KernelClient
 
 
-with KernelClient(server_url="http://localhost:8888", token="aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b") as kernel:
+with KernelClient(server_url="http://localhost:8888", token="MY_TOKEN") as kernel:
     reply = kernel.execute(
         """import os
 from platform import node
@@ -75,9 +64,9 @@ print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
     assert reply["status"] == "ok"
 ```
 
-### Jupyter Console
+### Jupyter Konsole (aka Console for Kernels)
 
-This package can be used to open a Jupyter Console to a Jupyter Kernel through HTTP 🐣.
+This package can be used to open a Jupyter Console to a Jupyter Kernel 🐣.
 
 1. Install the optional dependencies.
 
@@ -85,30 +74,16 @@ This package can be used to open a Jupyter Console to a Jupyter Kernel through H
 pip install jupyter-kernel-client[konsole]
 ```
 
-2. Start a Jupyter Server (or JupyterLab or Jupyter Notebook).
+2. Start a Jupyter Server.
 
 ```sh
-jupyter server
-# ...
-#    To access the server, open this file in a browser:
-#        file:///home/echarles/.local/share/jupyter/runtime/jpserver-910631-open.html
-#    Or copy and paste one of these URLs:
-#        http://localhost:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
-#        http://127.0.0.1:8888/?token=aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
+jupyter server --port 8888 --token MY_TOKEN
 ```
 
-3. Note down the URL (usually `http://localhost:8888`) and the Server Token (in the above example it will be `aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b`)
-
-4. Start the console.
-
-```sh
-jupyter-konsole --url http://localhost:8888 --token aed1fef59f754b9bfc99017e1dcf4d5602fc1a97d331069b
-```
-
-Example of console session.
+3. Start the konsole and execute code.
 
 ```bash
-❯ jupyter-konsole --url http://localhost:8888 --token 0d2004a3f836e3dbb01a035c66a43b6fa06e44b004599835
+$ jupyter konsole --url http://localhost:8888 --IdentityProvider.token MY_TOKEN
 [KonsoleApp] KernelHttpManager created a new kernel: ...
 Jupyter Kernel console 0.2.0
 
@@ -124,7 +99,7 @@ In [2]:
 
 ## Uninstall
 
-To remove the extension, execute:
+To remove the library, execute:
 
 ```bash
 pip uninstall jupyter_kernel_client
@@ -139,7 +114,7 @@ pip uninstall jupyter_kernel_client
 # Change directory to the jupyter_kernel_client directory
 # Install package in development mode - will automatically enable
 # The server extension.
-pip install -e ".[test,lint,typing]"
+pip install -e ".[konsole,test,lint,typing]"
 ```
 
 ### Running Tests
@@ -162,6 +137,6 @@ pytest
 pip uninstall jupyter_kernel_client
 ```
 
-### Packaging the extension
+### Packaging the library
 
 See [RELEASE](RELEASE.md)
