@@ -31,7 +31,7 @@ pip install jupyter-server ipykernel
 
 ### Kernel Client
 
-2. Start a Jupyter Server (or JupyterLab or Jupyter Notebook).
+2. Start a Jupyter Server.
 
 ```sh
 jupyter server --port 8888 --IdentityProvider.token MY_TOKEN
