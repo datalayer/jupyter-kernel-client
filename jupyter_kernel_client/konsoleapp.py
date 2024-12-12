@@ -16,16 +16,17 @@ from . import __version__
 from .manager import KernelHttpManager
 from .shell import WSTerminalInteractiveShell
 
+
 # -----------------------------------------------------------------------------
 # Globals
 # -----------------------------------------------------------------------------
 
 _examples = """
 # Start a console connected to a local Jupyter Server running at http://localhost:8888 with a new python kernel.
-jupyter connect --token <server_token>
+jupyter konsole --token <server_token>
 
 # Start a console connected to a distant Jupyter Server with a new python kernel.
-jupyter connect --url https://my.jupyter-server.xzy --token <server_token>
+jupyter konsole --url https://my.jupyter-server.xzy --token <server_token>
 """
 
 # -----------------------------------------------------------------------------
@@ -37,16 +38,16 @@ flags = dict(base_flags)
 flags.update(
     boolean_flag(
         "confirm-exit",
-        "ConsoleApp.confirm_exit",
+        "KonsoleApp.confirm_exit",
         """Set to display confirmation dialog on exit. You can always use 'exit' or
        'quit', to force a direct exit without any confirmation. This can also
        be set in the config file by setting
-       `c.ConsoleApp.confirm_exit`.
+       `c.KonsoleApp.confirm_exit`.
     """,
         """Don't prompt the user when exiting. This will terminate the kernel
        if it is owned by the frontend, and leave it alive if it is external.
        This can also be set in the config file by setting
-       `c.ConsoleApp.confirm_exit`.
+       `c.KonsoleApp.confirm_exit`.
     """,
     )
 )
@@ -63,10 +64,10 @@ flags.update(
 aliases = dict(base_aliases)
 aliases.update(
     {
-        "existing": "ConsoleApp.existing",
-        "kernel": "ConsoleApp.kernel_name",
-        "token": "ConsoleApp.token",
-        "url": "ConsoleApp.server_url",
+        "existing": "KonsoleApp.existing",
+        "kernel": "KonsoleApp.kernel_name",
+        "token": "KonsoleApp.token",
+        "url": "KonsoleApp.server_url",
     }
 )
 
@@ -75,10 +76,10 @@ aliases.update(
 # -----------------------------------------------------------------------------
 
 
-class ConsoleApp(JupyterApp):
+class KonsoleApp(JupyterApp):
     """Start a terminal frontend to a kernel."""
 
-    name = "jupyter-connect"
+    name = "jupyter-konsole"
     version = __version__
 
     description = """
@@ -93,7 +94,7 @@ class ConsoleApp(JupyterApp):
         single-process Terminal IPython shell, such as connecting to an
         existing jupyter kernel, via:
 
-            jupyter connect --token <server token> --existing <kernel_id>
+            jupyter konsole --token <server token> --existing <kernel_id>
 
         where the previous session could have been created by another jupyter
         console, or by opening a notebook.
@@ -218,7 +219,7 @@ class ConsoleApp(JupyterApp):
             self.kernel_client.client.stop_channels()
 
 
-main = launch_new_instance = ConsoleApp.launch_instance
+main = launch_new_instance = KonsoleApp.launch_instance
 
 
 if __name__ == "__main__":
