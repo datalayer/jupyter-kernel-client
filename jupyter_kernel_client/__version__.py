@@ -4,5 +4,4 @@
 
 """Jupyter Kernel Client through websocket."""
 
-
 __version__ = "0.3.1"

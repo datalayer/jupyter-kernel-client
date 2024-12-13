@@ -9,7 +9,6 @@ from .konsoleapp import KonsoleApp
 from .manager import KernelHttpManager
 from .wsclient import KernelWebSocketClient
 
-
 __all__ = [
     "KernelClient",
     "KernelHttpManager",

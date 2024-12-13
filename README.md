@@ -94,7 +94,7 @@ IPython 8.30.0 -- An enhanced Interactive Python. Type '?' for help.
 In [1]: print("hello")
 hello
 
-In [2]:                                                                                                  
+In [2]:
 ```
 
 ## Uninstall
