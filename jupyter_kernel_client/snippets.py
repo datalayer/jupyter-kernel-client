@@ -126,7 +126,7 @@ PYTHON_SNIPPETS = LanguageSnippets(
     display({"application/json": _vars}, raw=True)
 
 _list_variables()
-""",
+""",  # noqa E501
     get_variable="""def _get_variable(name, mimetype):
     from IPython.display import display
 
