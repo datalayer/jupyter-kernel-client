@@ -803,7 +803,7 @@ class KernelWebSocketClient(KernelClientABC):
         self.shell_channel.send(msg)
         return msg["header"]["msg_id"]
 
-    def kernel_info(self) -> str:
+    def kernel_info(self, force: bool = False) -> str:
         """Request kernel info
 
         Returns
@@ -1154,7 +1154,7 @@ class KernelWebSocketClient(KernelClientABC):
             # Check if current time is ready check time plus timeout
             if time.time() > abs_timeout:
                 emsg = f"Kernel didn't respond in {timeout:d} seconds"
-                raise RuntimeError(emsg)
+                raise TimeoutError(emsg)
 
         # Flush IOPub channel
         while True:

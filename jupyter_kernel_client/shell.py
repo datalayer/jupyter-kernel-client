@@ -34,7 +34,7 @@ try:
                 await asyncio.sleep(0.5)
 
         def show_banner(self):
-            print(
+            print(  # noqa T201
                 self.banner.format(
                     version=__version__, kernel_banner=self.kernel_info.get("banner", "")
                 ),

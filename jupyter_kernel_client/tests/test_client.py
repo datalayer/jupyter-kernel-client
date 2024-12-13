@@ -5,6 +5,8 @@
 import os
 from platform import node
 
+import pytest
+
 from jupyter_kernel_client import KernelClient
 
 
@@ -54,3 +56,57 @@ print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
         }
     ]
     assert reply["status"] == "ok"
+
+
+def test_list_variables(jupyter_server):
+    port, token = jupyter_server
+
+    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+        kernel.execute(
+            """a = 1.0
+b = "hello the world"
+c = {3, 4, 5}
+d = {"name": "titi"}
+"""
+        )
+
+        variables = kernel.list_variables()
+
+    assert variables == [
+        {
+            "name": "a",
+            "type": "float",
+        },
+        {
+            "name": "b",
+            "type": "str",
+        },
+        {
+            "name": "c",
+            "type": "set",
+        },
+        {
+            "name": "d",
+            "type": "dict",
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "variable,set_variable,expected",
+    (
+        ("a", "a = 1.0", {"text/plain": "1.0"}),
+        ("b", 'b = "hello the world"', {"text/plain": "'hello the world'"}),
+        ("c", "c = {3, 4, 5}", {"text/plain": "{3, 4, 5}"}),
+        ("d", "d = {'name': 'titi'}", {"text/plain": "{'name': 'titi'}"}),
+    ),
+)
+def test_get_all_mimetype_variables(jupyter_server, variable, set_variable, expected):
+    port, token = jupyter_server
+
+    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+        kernel.execute(set_variable)
+
+        values = kernel.get_variable(variable)
+
+    assert values == expected

@@ -14,6 +14,7 @@ from traitlets.config import LoggingConfigurable
 
 from .constants import REQUEST_TIMEOUT
 from .manager import KernelHttpManager
+from .snippets import SNIPPETS_REGISTRY
 from .utils import UTC
 
 logger = logging.getLogger("jupyter_kernel_client")
@@ -149,7 +150,7 @@ class KernelClient(LoggingConfigurable):
             Client user name; default to environment variable USER
         kernel_id: str | None
             ID of the kernel to connect to
-    """
+    """  # noqa E501
 
     kernel_manager_class = Type(
         default_value=KernelHttpManager,
@@ -186,6 +187,18 @@ class KernelClient(LoggingConfigurable):
     def id(self) -> str | None:
         """Kernel ID"""
         return self._manager.kernel["id"] if self._manager.kernel else None
+
+    @property
+    def kernel_info(self) -> dict[str, t.Any] | None:
+        """Kernel information.
+
+        This is the dictionary returned by the kernel for a kernel_info_request.
+
+        Returns:
+            The kernel information
+        """
+        if self._manager.kernel:
+            return self._manager.client.kernel_info_interactive(timeout=REQUEST_TIMEOUT)
 
     @property
     def last_activity(self) -> datetime.datetime | None:
@@ -337,7 +350,7 @@ class KernelClient(LoggingConfigurable):
         """Restarts a kernel."""
         return self._manager.restart_kernel(timeout=timeout)
 
-    def __enter__(self) -> "KernelClient":
+    def __enter__(self) -> KernelClient:
         self.start()
         return self
 
@@ -382,4 +395,95 @@ class KernelClient(LoggingConfigurable):
             self._manager.client.stop_channels()
             shutdown = self._own_kernel if shutdown_kernel is None else shutdown_kernel
             if shutdown:
-                self._manager.shutdown_kernel(now=shutdown_now, timeout=timeout)
+                try:
+                    self._manager.shutdown_kernel(now=shutdown_now, timeout=timeout)
+                except BaseException:
+                    ...
+
+    #
+    # Variables related methods
+    #
+    def get_variable(self, name: str, mimetype: str | None = None) -> dict[str, t.Any]:
+        """Get a kernel variable.
+
+        Args:
+            name: Variable name
+            mimetype: optional, type of variable value serialization; default ``None``,
+                i.e. returns all known serialization.
+
+        Returns:
+            A dictionary for which keys are mimetype and values the variable value
+            serialized in that mimetype.
+            Even if a mimetype is specified, the dictionary may not contain it if
+            the kernel introspection failed to get the variable in the specified format.
+        Raises:
+            ValueError: If the kernel programming language is not supported
+            RuntimeError: If the kernel introspection failed
+        """
+        kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
+        if kernel_language not in SNIPPETS_REGISTRY.available_languages:
+            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+You can set them yourself using:
+
+    from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
+    SNIPPETS_REGISTRY.register("my-language", LanguageSnippets(list_variables="", get_variable=""))
+""")
+
+        snippet = SNIPPETS_REGISTRY.get_get_variable(kernel_language)
+        results = self.execute(snippet.format(name=name, mimetype=mimetype), silent=True)
+
+        self.log.debug("Kernel variables: %s", results)
+
+        if results["status"] == "ok" and results["outputs"]:
+            if mimetype is None:
+                return results["outputs"][0]["data"]
+            else:
+                has_mimetype = mimetype in results["outputs"][0]["data"]
+                return {mimetype: results["outputs"][0]["data"][mimetype]} if has_mimetype else {}
+        else:
+            raise RuntimeError(f"Failed to get variable {name} with type {mimetype}.")
+
+    def list_variables(self) -> list[dict[str, t.Any]]:
+        """List the kernel global variables.
+
+        A variable is defined by a dictionary with the schema:
+        {
+            "type": "object",
+            "properties": {
+                "name": {"title": "Variable name", "type": "string"},
+                "type": {"title": "Variable type", "type": "string"},
+                "size": {"title": "Variable size in bytes.", "type": "number"}
+            },
+            "required": ["name", "type"]
+        }
+
+        Returns:
+            The list of global variables.
+        Raises:
+            ValueError: If the kernel programming language is not supported
+            RuntimeError: If the kernel introspection failed
+        """
+        kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
+        if kernel_language not in SNIPPETS_REGISTRY.available_languages:
+            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+You can set them yourself using:
+
+    from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
+    SNIPPETS_REGISTRY.register("my-language", LanguageSnippets(list_variables="", get_variable=""))
+""")
+
+        snippet = SNIPPETS_REGISTRY.get_list_variables(kernel_language)
+        results = self.execute(snippet, silent=True)
+
+        self.log.debug("Kernel variables: %s", results)
+
+        if (
+            results["status"] == "ok"
+            and results["outputs"]
+            and "application/json" in results["outputs"][0]["data"]
+        ):
+            return sorted(
+                results["outputs"][0]["data"]["application/json"], key=lambda v: v["name"]
+            )
+        else:
+            raise RuntimeError("Failed to list variables.")
