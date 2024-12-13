@@ -133,7 +133,7 @@ _list_variables()
     variable = globals()[name]
     include = None if mimetype is None else [mimetype]
     display(variable, include=include)
-_get_variable("{name}", "{mimetype}" if {mimetype} else None)
+_get_variable("{name}", "{mimetype}" if "{mimetype}" != "None" else None)
 """,
 )
 

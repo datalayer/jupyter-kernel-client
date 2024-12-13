@@ -395,10 +395,7 @@ class KernelClient(LoggingConfigurable):
             self._manager.client.stop_channels()
             shutdown = self._own_kernel if shutdown_kernel is None else shutdown_kernel
             if shutdown:
-                try:
-                    self._manager.shutdown_kernel(now=shutdown_now, timeout=timeout)
-                except BaseException:
-                    ...
+                self._manager.shutdown_kernel(now=shutdown_now, timeout=timeout)
 
     #
     # Variables related methods
