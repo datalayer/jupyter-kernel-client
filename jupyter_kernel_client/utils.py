@@ -14,7 +14,7 @@ Code source:
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone, tzinfo
-from typing import Any, List
+from typing import Any
 
 
 def serialize_msg_to_ws_v1(msg_or_list, channel, pack=None):
@@ -29,7 +29,7 @@ def serialize_msg_to_ws_v1(msg_or_list, channel, pack=None):
     else:
         msg_list = msg_or_list
     channel = channel.encode("utf-8")
-    offsets: List[Any] = []
+    offsets: list[Any] = []
     offsets.append(8 * (1 + 1 + len(msg_list) + 1))
     offsets.append(len(channel) + offsets[-1])
     for msg in msg_list:

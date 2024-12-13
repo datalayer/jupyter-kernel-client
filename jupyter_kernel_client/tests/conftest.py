@@ -13,6 +13,9 @@ from subprocess import PIPE, Popen, TimeoutExpired
 import pytest
 import requests
 
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+
 
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:

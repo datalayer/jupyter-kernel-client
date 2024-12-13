@@ -16,7 +16,6 @@ from . import __version__
 from .manager import KernelHttpManager
 from .shell import WSTerminalInteractiveShell
 
-
 # -----------------------------------------------------------------------------
 # Globals
 # -----------------------------------------------------------------------------
@@ -27,7 +26,7 @@ jupyter konsole --token <server_token>
 
 # Start a console connected to a distant Jupyter Server with a new python kernel.
 jupyter konsole --url https://my.jupyter-server.xzy --token <server_token>
-"""
+"""  # noqa E501
 
 # -----------------------------------------------------------------------------
 # Flags and Aliases
@@ -102,7 +101,7 @@ class KonsoleApp(JupyterApp):
     """
     examples = _examples
 
-    classes = [WSTerminalInteractiveShell]
+    classes = [WSTerminalInteractiveShell]  # noqa RUF012
     flags = Dict(flags)
     aliases = Dict(aliases)
 

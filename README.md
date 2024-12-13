@@ -17,7 +17,7 @@ Jupyter Kernel Client allows you to connect via WebSocket and HTTP to Jupyter Ke
 
 To install the library, run the following command.
 
-```bash
+```sh
 pip install jupyter_kernel_client
 ```
 
@@ -31,13 +31,13 @@ pip install jupyter-server ipykernel
 
 ### Kernel Client
 
-2. Start a Jupyter Server.
+1. Start a Jupyter Server.
 
 ```sh
 jupyter server --port 8888 --IdentityProvider.token MY_TOKEN
 ```
 
-3. Launch `python` in a terminal and execute the following snippet (update the server_url and token).
+2. Launch `python` in a terminal and execute the following snippet (update the server_url and token).
 
 ```py
 import os
@@ -77,13 +77,16 @@ pip install jupyter-kernel-client[konsole]
 2. Start a Jupyter Server.
 
 ```sh
-jupyter server --port 8888 --token MY_TOKEN
+jupyter server --port 8888 --IdentityProvider.token MY_TOKEN
 ```
 
 3. Start the konsole and execute code.
 
-```bash
-$ jupyter konsole --url http://localhost:8888 --IdentityProvider.token MY_TOKEN
+```sh
+jupyter konsole --url http://localhost:8888 --token MY_TOKEN
+```
+
+```sh
 [KonsoleApp] KernelHttpManager created a new kernel: ...
 Jupyter Kernel console 0.2.0
 
@@ -94,14 +97,14 @@ IPython 8.30.0 -- An enhanced Interactive Python. Type '?' for help.
 In [1]: print("hello")
 hello
 
-In [2]:                                                                                                  
+In [2]:
 ```
 
 ## Uninstall
 
 To remove the library, execute:
 
-```bash
+```sh
 pip uninstall jupyter_kernel_client
 ```
 
@@ -109,7 +112,7 @@ pip uninstall jupyter_kernel_client
 
 ### Development install
 
-```bash
+```sh
 # Clone the repo to your local environment
 # Change directory to the jupyter_kernel_client directory
 # Install package in development mode - will automatically enable
@@ -121,19 +124,19 @@ pip install -e ".[konsole,test,lint,typing]"
 
 Install dependencies:
 
-```bash
+```sh
 pip install -e ".[test]"
 ```
 
 To run the python tests, use:
 
-```bash
+```sh
 pytest
 ```
 
 ### Development uninstall
 
-```bash
+```sh
 pip uninstall jupyter_kernel_client
 ```
 

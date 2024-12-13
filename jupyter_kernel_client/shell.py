@@ -34,7 +34,7 @@ try:
                 await asyncio.sleep(0.5)
 
         def show_banner(self):
-            print(
+            print(  # noqa T201
                 self.banner.format(
                     version=__version__, kernel_banner=self.kernel_info.get("banner", "")
                 ),
@@ -57,7 +57,7 @@ except ModuleNotFoundError:
             self._executing = False
 
         def show_banner(self):
-            return "You must install `jupyter_console` to use the console:\n\n\tpip install jupyter-console\n"
+            return "You must install `jupyter_console` to use the console:\n\n\tpip install jupyter-console\n"  # noqa E501
 
         def mainloop(self) -> None:
             raise ModuleNotFoundError("jupyter_console")
