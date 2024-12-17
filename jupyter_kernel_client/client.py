@@ -168,7 +168,12 @@ class KernelClient(LoggingConfigurable):
         self._own_kernel = self._manager.kernel is None
 
     def __del__(self) -> None:
-        self.stop()
+        try:
+            self.stop()
+        except BaseException as e:
+            self.log.error(
+                "Failed to stop the kernel client for %s.", self._manager.kernel_url, exc_info=e
+            )
 
     @property
     def execution_state(self) -> str | None:
@@ -255,12 +260,12 @@ class KernelClient(LoggingConfigurable):
 
         reply = self._manager.client.execute_interactive(
             code,
-            silent,
-            store_history,
-            user_expressions,
-            allow_stdin,
-            stop_on_error,
-            timeout,
+            silent=silent,
+            store_history=store_history,
+            user_expressions=user_expressions,
+            allow_stdin=allow_stdin,
+            stop_on_error=stop_on_error,
+            timeout=timeout,
             output_hook=partial(output_hook, outputs),
             stdin_hook=stdin_hook,
         )
@@ -358,7 +363,10 @@ class KernelClient(LoggingConfigurable):
         self.stop()
 
     def start(
-        self, name: str = "python3", path: str | None = None, timeout: float = REQUEST_TIMEOUT
+        self,
+        name: str = "python3",
+        path: str | None = None,
+        timeout: float = REQUEST_TIMEOUT,
     ) -> None:
         """Connect to a kernel.
 
