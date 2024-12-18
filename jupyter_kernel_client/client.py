@@ -492,7 +492,7 @@ You can set them yourself using:
                     VariableDescription(**v)
                     for v in results["outputs"][-1]["data"]["application/json"]
                 ),
-                key=lambda v: v.name,
+                key=lambda v: v["name"],
             )
         else:
             raise RuntimeError("Failed to list variables.")

@@ -32,9 +32,12 @@ class LanguageSnippets:
                         {"title": "Type name", "type": "string"}
                     ]
                 },
-                "size": {"title": "Variable size in bytes.", "type": "number"}
+                "size": {
+                    "title": "Variable size in bytes.",
+                    "oneOf": [{"type": "number"}, {"type": "null"}]
+                }
             },
-            "required": ["name", "type"]
+            "required": ["name", "type", "size"]
         }
     }
     """
@@ -137,7 +140,8 @@ PYTHON_SNIPPETS = LanguageSnippets(
                         "type": (
                             getattr(variable_type, "__module__", None),
                             variable_type.__qualname__
-                        )
+                        ),
+                        "size": None,
                     }
                 )
             except BaseException as e:

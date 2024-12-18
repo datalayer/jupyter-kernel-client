@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from typing import TypedDict
 
 
-@dataclass(frozen=True)
-class VariableDescription:
+class VariableDescription(TypedDict):
     name: str
     type: tuple[str | None, str]
-    size: int | None = None
+    size: int | None
