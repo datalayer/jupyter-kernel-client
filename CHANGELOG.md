@@ -8,6 +8,30 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.4.0
+
+([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.3.1...55b117e90c57eab0eb4bdfda16d53aa88d5a8041))
+
+### New features added
+
+- chore: konsole [#9](https://github.com/datalayer/jupyter-kernel-client/pull/9) ([@echarles](https://github.com/echarles))
+
+### Enhancements made
+
+- Improve variables API [#14](https://github.com/datalayer/jupyter-kernel-client/pull/14) ([@fcollonval](https://github.com/fcollonval))
+- Add first implementation for list and get variables [#12](https://github.com/datalayer/jupyter-kernel-client/pull/12) ([@fcollonval](https://github.com/fcollonval))
+- Capture exception on client stop [#11](https://github.com/datalayer/jupyter-kernel-client/pull/11) ([@fcollonval](https://github.com/fcollonval))
+- Readme and Konsole [#10](https://github.com/datalayer/jupyter-kernel-client/pull/10) ([@echarles](https://github.com/echarles))
+- chore: konsole [#9](https://github.com/datalayer/jupyter-kernel-client/pull/9) ([@echarles](https://github.com/echarles))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2024-12-10&to=2024-12-18&type=c))
+
+[@echarles](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Aecharles+updated%3A2024-12-10..2024-12-18&type=Issues) | [@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2024-12-10..2024-12-18&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.3.1
 
 ([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.3.0...f2a2cce9407800ab7f98fddcd43513987d944c52))
@@ -29,8 +53,6 @@
 ([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2024-12-07&to=2024-12-10&type=c))
 
 [@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2024-12-07..2024-12-10&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.3.0
 
