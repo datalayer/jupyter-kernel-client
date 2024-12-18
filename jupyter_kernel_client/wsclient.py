@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 import os
-import pprint
 import queue
 import signal
 import sys
@@ -34,6 +33,12 @@ from .utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1
 
 class WSSession(Session):
     """WebSocket session."""
+
+    def __init__(self, log: logging.Logger | None = None, **kwargs):
+        super().__init__(**kwargs)
+        self.log = log or get_logger()
+        if not self.debug:
+            self.debug = self.log.level == logging.DEBUG
 
     def serialize(self, msg: dict[str, t.Any], **kwargs) -> list[bytes]:  # type:ignore[override,no-untyped-def]
         """Serialize the message components to bytes.
@@ -127,10 +132,7 @@ class WSSession(Session):
             message["content"] = msg_list[3]
         buffers = [memoryview(b) for b in msg_list[4:]]
         message["buffers"] = buffers
-        if self.debug:
-            # Keep pprint instead of logging as this is the method used by `Session`
-            pprint.pprint("WSSession.deserialize")  # noqa: T203
-            pprint.pprint(message)  # noqa: T203
+        self.log.debug("WSSession.deserialize\n%s", message)
         # adapt to the current version
         return adapt(message)
 
@@ -225,12 +227,7 @@ class WSSession(Session):
 
         stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
 
-        if self.debug:
-            # Keep pprint instead of logging as this is the method used by `Session`
-            pprint.pprint("WSSession.send")  # noqa: T203
-            pprint.pprint(msg)  # noqa: T203
-            pprint.pprint(to_send)  # noqa: T203
-            pprint.pprint(buffers)  # noqa: T203
+        self.log.debug("WSSession.send\n%s\n%s\n%s", msg, to_send, buffers)
 
         return msg
 
@@ -459,7 +456,7 @@ class KernelWebSocketClient(KernelClientABC):
         self._message_received = Event()
         self.interrupt_thread = None
         self.timeout = timeout
-        self.session = WSSession()
+        self.session = WSSession(log=self.log)
         self.session.username = username or ""
         self.session.debug = debug_session
 

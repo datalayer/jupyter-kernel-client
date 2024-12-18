@@ -13,11 +13,11 @@ from traitlets import Type
 from traitlets.config import LoggingConfigurable
 
 from .constants import REQUEST_TIMEOUT
+from .log import get_logger
 from .manager import KernelHttpManager
+from .models import VariableDescription
 from .snippets import SNIPPETS_REGISTRY
 from .utils import UTC
-
-logger = logging.getLogger("jupyter_kernel_client")
 
 
 def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> set[int]:  # noqa: C901
@@ -161,7 +161,7 @@ class KernelClient(LoggingConfigurable):
     def __init__(
         self, kernel_id: str | None = None, log: logging.Logger | None = None, **kwargs
     ) -> None:
-        super().__init__(log=log or logger)
+        super().__init__(log=log or get_logger())
         self._manager = self.kernel_manager_class(parent=self, kernel_id=kernel_id, **kwargs)
         # Set it after the manager as if a kernel_id is provided,
         # we will try to connect to it.
@@ -408,7 +408,9 @@ class KernelClient(LoggingConfigurable):
     #
     # Variables related methods
     #
-    def get_variable(self, name: str, mimetype: str | None = None) -> dict[str, t.Any]:
+    def get_variable(
+        self, name: str, mimetype: str | None = None
+    ) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
         """Get a kernel variable.
 
         Args:
@@ -417,8 +419,8 @@ class KernelClient(LoggingConfigurable):
                 i.e. returns all known serialization.
 
         Returns:
-            A dictionary for which keys are mimetype and values the variable value
-            serialized in that mimetype.
+            A tuple of dictionaries for which keys are mimetype and values the variable value
+            serialized in that mimetype for the first dictionary and metadata in the second one.
             Even if a mimetype is specified, the dictionary may not contain it if
             the kernel introspection failed to get the variable in the specified format.
         Raises:
@@ -441,26 +443,24 @@ You can set them yourself using:
 
         if results["status"] == "ok" and results["outputs"]:
             if mimetype is None:
-                return results["outputs"][0]["data"]
+                return results["outputs"][0]["data"], results["outputs"][0].get("metadata", {})
             else:
-                has_mimetype = mimetype in results["outputs"][0]["data"]
-                return {mimetype: results["outputs"][0]["data"][mimetype]} if has_mimetype else {}
+
+                def filter_dict(d: dict, mimetype: str) -> dict:
+                    if mimetype in d:
+                        return {mimetype: d[mimetype]}
+                    else:
+                        return {}
+
+                return (
+                    filter_dict(results["outputs"][0]["data"], mimetype),
+                    filter_dict(results["outputs"][0].get("metadata", {}), mimetype),
+                )
         else:
             raise RuntimeError(f"Failed to get variable {name} with type {mimetype}.")
 
-    def list_variables(self) -> list[dict[str, t.Any]]:
+    def list_variables(self) -> list[VariableDescription]:
         """List the kernel global variables.
-
-        A variable is defined by a dictionary with the schema:
-        {
-            "type": "object",
-            "properties": {
-                "name": {"title": "Variable name", "type": "string"},
-                "type": {"title": "Variable type", "type": "string"},
-                "size": {"title": "Variable size in bytes.", "type": "number"}
-            },
-            "required": ["name", "type"]
-        }
 
         Returns:
             The list of global variables.
@@ -485,10 +485,14 @@ You can set them yourself using:
         if (
             results["status"] == "ok"
             and results["outputs"]
-            and "application/json" in results["outputs"][0]["data"]
+            and "application/json" in results["outputs"][-1]["data"]
         ):
             return sorted(
-                results["outputs"][0]["data"]["application/json"], key=lambda v: v["name"]
+                (
+                    VariableDescription(**v)
+                    for v in results["outputs"][-1]["data"]["application/json"]
+                ),
+                key=lambda v: v.name,
             )
         else:
             raise RuntimeError("Failed to list variables.")

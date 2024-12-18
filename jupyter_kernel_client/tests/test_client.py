@@ -7,7 +7,7 @@ from platform import node
 
 import pytest
 
-from jupyter_kernel_client import KernelClient
+from jupyter_kernel_client import KernelClient, VariableDescription
 
 
 def test_execution_as_context_manager(jupyter_server):
@@ -73,22 +73,22 @@ d = {"name": "titi"}
         variables = kernel.list_variables()
 
     assert variables == [
-        {
-            "name": "a",
-            "type": "float",
-        },
-        {
-            "name": "b",
-            "type": "str",
-        },
-        {
-            "name": "c",
-            "type": "set",
-        },
-        {
-            "name": "d",
-            "type": "dict",
-        },
+        VariableDescription(
+            name="a",
+            type=["builtins", "float"],
+        ),
+        VariableDescription(
+            name="b",
+            type=["builtins", "str"],
+        ),
+        VariableDescription(
+            name="c",
+            type=["builtins", "set"],
+        ),
+        VariableDescription(
+            name="d",
+            type=["builtins", "dict"],
+        ),
     ]
 
 
