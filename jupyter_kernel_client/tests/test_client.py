@@ -7,7 +7,7 @@ from platform import node
 
 import pytest
 
-from jupyter_kernel_client import KernelClient
+from jupyter_kernel_client import KernelClient, VariableDescription
 
 
 def test_execution_as_context_manager(jupyter_server):
@@ -73,32 +73,36 @@ d = {"name": "titi"}
         variables = kernel.list_variables()
 
     assert variables == [
-        {
-            "name": "a",
-            "type": "float",
-        },
-        {
-            "name": "b",
-            "type": "str",
-        },
-        {
-            "name": "c",
-            "type": "set",
-        },
-        {
-            "name": "d",
-            "type": "dict",
-        },
+        VariableDescription(
+            name="a",
+            type=["builtins", "float"],
+            size=None
+        ),
+        VariableDescription(
+            name="b",
+            type=["builtins", "str"],
+            size=None
+        ),
+        VariableDescription(
+            name="c",
+            type=["builtins", "set"],
+            size=None,
+        ),
+        VariableDescription(
+            name="d",
+            type=["builtins", "dict"],
+            size=None,
+        ),
     ]
 
 
 @pytest.mark.parametrize(
     "variable,set_variable,expected",
     (
-        ("a", "a = 1.0", {"text/plain": "1.0"}),
-        ("b", 'b = "hello the world"', {"text/plain": "'hello the world'"}),
-        ("c", "c = {3, 4, 5}", {"text/plain": "{3, 4, 5}"}),
-        ("d", "d = {'name': 'titi'}", {"text/plain": "{'name': 'titi'}"}),
+        ("a", "a = 1.0", ({"text/plain": "1.0"}, {})),
+        ("b", 'b = "hello the world"', ({"text/plain": "'hello the world'"}, {})),
+        ("c", "c = {3, 4, 5}", ({"text/plain": "{3, 4, 5}"}, {})),
+        ("d", "d = {'name': 'titi'}", ({"text/plain": "{'name': 'titi'}"}, {})),
     ),
 )
 def test_get_all_mimetype_variables(jupyter_server, variable, set_variable, expected):
@@ -115,10 +119,10 @@ def test_get_all_mimetype_variables(jupyter_server, variable, set_variable, expe
 @pytest.mark.parametrize(
     "variable,set_variable,expected",
     (
-        ("a", "a = 1.0", {"text/plain": "1.0"}),
-        ("b", 'b = "hello the world"', {"text/plain": "'hello the world'"}),
-        ("c", "c = {3, 4, 5}", {"text/plain": "{3, 4, 5}"}),
-        ("d", "d = {'name': 'titi'}", {"text/plain": "{'name': 'titi'}"}),
+        ("a", "a = 1.0", ({"text/plain": "1.0"}, {})),
+        ("b", 'b = "hello the world"', ({"text/plain": "'hello the world'"}, {})),
+        ("c", "c = {3, 4, 5}", ({"text/plain": "{3, 4, 5}"}, {})),
+        ("d", "d = {'name': 'titi'}", ({"text/plain": "{'name': 'titi'}"}, {})),
     ),
 )
 def test_get_textplain_variables(jupyter_server, variable, set_variable, expected):

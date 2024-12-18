@@ -24,10 +24,20 @@ class LanguageSnippets:
             "type": "object",
             "properties": {
                 "name": {"title": "Variable name", "type": "string"},
-                "type": {"title": "Variable type", "type": "string"},
-                "size": {"title": "Variable size in bytes.", "type": "number"}
+                "type": {
+                    "title": "Variable type",
+                    "type": "array",
+                    "prefixItems": [
+                        {"title": "Type module", "oneOf": [{"type": "string"}, {"type": "null"}]},
+                        {"title": "Type name", "type": "string"}
+                    ]
+                },
+                "size": {
+                    "title": "Variable size in bytes.",
+                    "oneOf": [{"type": "number"}, {"type": "null"}]
+                }
             },
-            "required": ["name", "type"]
+            "required": ["name", "type", "size"]
         }
     }
     """
@@ -123,9 +133,19 @@ PYTHON_SNIPPETS = LanguageSnippets(
             (_n == 'Out' and isinstance(_v, dict))
         ):
             try:
-                _vars.append({"name": _n, "type": type(_v).__qualname__})
-            except BaseException:
-                ...
+                variable_type = type(_v)
+                _vars.append(
+                    {
+                        "name": _n,
+                        "type": (
+                            getattr(variable_type, "__module__", None),
+                            variable_type.__qualname__
+                        ),
+                        "size": None,
+                    }
+                )
+            except BaseException as e:
+                print(e)
 
     display({"application/json": _vars}, raw=True)
 
