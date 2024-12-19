@@ -4,6 +4,7 @@
 
 """Jupyter Kernel Client through websocket."""
 
+from ._version import __version__
 from .client import KernelClient
 from .konsoleapp import KonsoleApp
 from .manager import KernelHttpManager
@@ -19,4 +20,5 @@ __all__ = [
     "KonsoleApp",
     "LanguageSnippets",
     "VariableDescription",
+    "__version__",
 ]
