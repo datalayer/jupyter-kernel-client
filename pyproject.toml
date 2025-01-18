@@ -38,7 +38,7 @@ file = "LICENSE"
 Home = "https://github.com/datalayer/jupyter-kernel-client"
 
 [tool.hatch.version]
-path = "jupyter_kernel_client/__version__.py"
+path = "jupyter_kernel_client/_version.py"
 
 [tool.pytest.ini_options]
 filterwarnings = [
