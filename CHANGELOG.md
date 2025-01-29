@@ -8,6 +8,27 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.5.0
+
+([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.4.0...b3263cc96e5a1e415d19289fde61935019170d6b))
+
+### Enhancements made
+
+- Add ping and reconnect interval [#17](https://github.com/datalayer/jupyter-kernel-client/pull/17) ([@fcollonval](https://github.com/fcollonval))
+
+### Bugs fixed
+
+- fix: build-version [#16](https://github.com/datalayer/jupyter-kernel-client/pull/16) ([@echarles](https://github.com/echarles))
+- Fix version handling [#15](https://github.com/datalayer/jupyter-kernel-client/pull/15) ([@fcollonval](https://github.com/fcollonval))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2024-12-18&to=2025-01-29&type=c))
+
+[@echarles](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Aecharles+updated%3A2024-12-18..2025-01-29&type=Issues) | [@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2024-12-18..2025-01-29&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.4.0
 
 ([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.3.1...55b117e90c57eab0eb4bdfda16d53aa88d5a8041))
@@ -29,8 +50,6 @@
 ([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2024-12-10&to=2024-12-18&type=c))
 
 [@echarles](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Aecharles+updated%3A2024-12-10..2024-12-18&type=Issues) | [@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2024-12-10..2024-12-18&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.3.1
 
