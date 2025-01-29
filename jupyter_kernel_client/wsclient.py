@@ -430,6 +430,12 @@ class KernelWebSocketClient(KernelClientABC):
         Application logger; default None
     debug_session: bool
         Verbose session; default False. It will print lots of details on sys.stdout
+    ping_interval: float
+        Interval in seconds to send a ping message to the server; default 60.
+        If it is set to 0, no ping message will be sent.
+    reconnect_interval: float
+        Amount of time to wait before trying to reconnect the websocket;
+        default 0 means no reconnection.
     """
 
     DEFAULT_INTERRUPT_WAIT = 1
@@ -442,6 +448,8 @@ class KernelWebSocketClient(KernelClientABC):
         timeout: float = REQUEST_TIMEOUT,
         log: logging.Logger | None = None,
         debug_session: bool = False,
+        ping_interval: float = 60,
+        reconnect_interval: int = 0,
         **kwargs,
     ):
         """Initialize the client."""
@@ -455,6 +463,8 @@ class KernelWebSocketClient(KernelClientABC):
         self.connection_ready = Event()
         self._message_received = Event()
         self.interrupt_thread = None
+        self.ping_interval: float = ping_interval
+        self.reconnect_interval = reconnect_interval
         self.timeout = timeout
         self.session = WSSession(log=self.log)
         self.session.username = username or ""
@@ -1202,7 +1212,9 @@ class KernelWebSocketClient(KernelClientABC):
             self.log.error("No websocket defined.")
             return
         try:
-            self.kernel_socket.run_forever(ping_interval=60, reconnect=5)
+            self.kernel_socket.run_forever(
+                ping_interval=self.ping_interval, reconnect=self.reconnect_interval
+            )
         except ValueError as e:
             self.log.error(
                 "Unable to open websocket connection with %s",
