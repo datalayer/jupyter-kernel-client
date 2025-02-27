@@ -24,7 +24,8 @@ dependencies = ["jupyter_core", "jupyter_client>=7.4.4", "requests", "traitlets>
 
 [project.optional-dependencies]
 konsole = ["jupyter_console"]
-test = ["ipykernel", "jupyter_server>=1.6,<3", "pytest>=7.0"]
+test = ["ipykernel", "jupyter_server>=1.6,<3", "pytest>=7.0", "pytest-asyncio",
+  "pytest-timeout",]
 lint = ["pre_commit", "mdformat>0.7", "mdformat-gfm>=0.3.5", "ruff"]
 typing = ["mypy>=0.990"]
 
@@ -41,6 +42,7 @@ Home = "https://github.com/datalayer/jupyter-kernel-client"
 path = "jupyter_kernel_client/_version.py"
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 filterwarnings = [
   "error",
   "ignore:There is no current event loop:DeprecationWarning",
@@ -48,6 +50,7 @@ filterwarnings = [
   "module:clear_current is deprecated:DeprecationWarning",
   "module:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
 ]
+timeout=30
 
 [tool.mypy]
 check_untyped_defs = true
