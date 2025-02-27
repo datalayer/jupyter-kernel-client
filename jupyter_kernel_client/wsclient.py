@@ -14,7 +14,7 @@ import sys
 import time
 import typing as t
 from getpass import getpass
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 from urllib.parse import urlencode
 
 import websocket  # type:ignore[import-untyped]
@@ -481,6 +481,8 @@ class KernelWebSocketClient(KernelClientABC):
         self._stdin_msg_queue: queue.Queue[dict] = queue.Queue()
         self._hb_msg_queue: queue.Queue[dict] = queue.Queue()
         self._control_msg_queue: queue.Queue[dict] = queue.Queue()
+
+        self._interactive_lock = Lock()
 
     def __del__(self):
         self.stop_channels()
@@ -999,62 +1001,63 @@ class KernelWebSocketClient(KernelClientABC):
         if timeout is not None:
             deadline = time.monotonic() + timeout
 
-        self._message_received.clear()
-        if self.iopub_channel.msg_ready():
-            # Flush the message
-            self.iopub_channel.get_msgs()
-        msg_id = self.execute(
-            code,
-            silent=silent,
-            store_history=store_history,
-            user_expressions=user_expressions,
-            allow_stdin=allow_stdin,
-            stop_on_error=stop_on_error,
-        )
+        with self._interactive_lock:
+            self._message_received.clear()
+            if self.iopub_channel.msg_ready():
+                # Flush the message
+                self.iopub_channel.get_msgs()
+            msg_id = self.execute(
+                code,
+                silent=silent,
+                store_history=store_history,
+                user_expressions=user_expressions,
+                allow_stdin=allow_stdin,
+                stop_on_error=stop_on_error,
+            )
 
-        # wait for output and redisplay it
-        while True:
-            if not self.connection_ready.is_set():
-                raise RuntimeError("Connection was lost.")
+            # wait for output and redisplay it
+            while True:
+                if not self.connection_ready.is_set():
+                    raise RuntimeError("Connection was lost.")
 
+                if timeout is not None:
+                    timeout = max(0, deadline - time.monotonic())
+
+                self._message_received.wait(timeout=timeout)
+
+                if allow_stdin:
+                    try:
+                        req = self.stdin_channel.get_msg(timeout=0)
+                        stdin_hook(req)
+                        continue
+                    except (queue.Empty, TimeoutError):
+                        ...
+
+                try:
+                    msg = self.iopub_channel.get_msg(timeout=0)
+                except (queue.Empty, TimeoutError):
+                    if not self.iopub_channel.msg_ready() and (
+                        not allow_stdin or not self.stdin_channel.msg_ready()
+                    ):
+                        self._message_received.clear()
+                    continue
+
+                if msg["parent_header"].get("msg_id") != msg_id:
+                    self.log.debug(f"Ignoring message not from request: {msg!s}")
+                    continue
+                output_hook(msg)
+
+                # stop on idle
+                if (
+                    msg["header"]["msg_type"] == "status"
+                    and msg["content"]["execution_state"] == "idle"
+                ):
+                    break
+
+            # output is done, get the reply
             if timeout is not None:
                 timeout = max(0, deadline - time.monotonic())
-
-            self._message_received.wait(timeout=timeout)
-
-            if allow_stdin:
-                try:
-                    req = self.stdin_channel.get_msg(timeout=0)
-                    stdin_hook(req)
-                    continue
-                except (queue.Empty, TimeoutError):
-                    ...
-
-            try:
-                msg = self.iopub_channel.get_msg(timeout=0)
-            except (queue.Empty, TimeoutError):
-                if not self.iopub_channel.msg_ready() and (
-                    not allow_stdin or not self.stdin_channel.msg_ready()
-                ):
-                    self._message_received.clear()
-                continue
-
-            if msg["parent_header"].get("msg_id") != msg_id:
-                self.log.debug(f"Ignoring message not from request: {msg!s}")
-                continue
-            output_hook(msg)
-
-            # stop on idle
-            if (
-                msg["header"]["msg_type"] == "status"
-                and msg["content"]["execution_state"] == "idle"
-            ):
-                break
-
-        # output is done, get the reply
-        if timeout is not None:
-            timeout = max(0, deadline - time.monotonic())
-        return self._recv_reply(msg_id, timeout=timeout)
+            return self._recv_reply(msg_id, timeout=timeout)
 
     def is_alive(self) -> bool:
         """Is the kernel process still running?"""
@@ -1136,39 +1139,40 @@ class KernelWebSocketClient(KernelClientABC):
                 raise RuntimeError(message)
             time.sleep(0.2)
 
-        # Wait for kernel info reply on shell channel
-        while True:
-            self.kernel_info()
-            try:
-                msg = self.shell_channel.get_msg(timeout=1)
-            except queue.Empty:
-                pass
-            else:
-                if msg["msg_type"] == "kernel_info_reply":
-                    # Checking that IOPub is connected. If it is not connected, start over.
-                    try:
-                        self.iopub_channel.get_msg(timeout=0.2)
-                    except queue.Empty:
-                        pass
-                    else:
-                        self._handle_kernel_info_reply(msg)
-                        break
+        with self._interactive_lock:
+            # Wait for kernel info reply on shell channel
+            while True:
+                self.kernel_info()
+                try:
+                    msg = self.shell_channel.get_msg(timeout=1)
+                except queue.Empty:
+                    pass
+                else:
+                    if msg["msg_type"] == "kernel_info_reply":
+                        # Checking that IOPub is connected. If it is not connected, start over.
+                        try:
+                            self.iopub_channel.get_msg(timeout=0.2)
+                        except queue.Empty:
+                            pass
+                        else:
+                            self._handle_kernel_info_reply(msg)
+                            break
 
-            if not self.is_alive():
-                emsg = "Kernel died before replying to kernel_info"
-                raise RuntimeError(emsg)
+                if not self.is_alive():
+                    emsg = "Kernel died before replying to kernel_info"
+                    raise RuntimeError(emsg)
 
-            # Check if current time is ready check time plus timeout
-            if time.time() > abs_timeout:
-                emsg = f"Kernel didn't respond in {timeout:d} seconds"
-                raise TimeoutError(emsg)
+                # Check if current time is ready check time plus timeout
+                if time.time() > abs_timeout:
+                    emsg = f"Kernel didn't respond in {timeout:d} seconds"
+                    raise TimeoutError(emsg)
 
-        # Flush IOPub channel
-        while True:
-            try:
-                msg = self.iopub_channel.get_msg(timeout=0.2)
-            except queue.Empty:
-                break
+            # Flush IOPub channel
+            while True:
+                try:
+                    msg = self.iopub_channel.get_msg(timeout=0.2)
+                except queue.Empty:
+                    break
 
     def _handle_kernel_info_reply(self, msg: dict[str, t.Any]) -> None:
         """handle kernel info reply

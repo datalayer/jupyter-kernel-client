@@ -2,6 +2,7 @@
 #
 # BSD 3-Clause License
 
+import asyncio
 import os
 from platform import node
 
@@ -134,3 +135,47 @@ def test_get_textplain_variables(jupyter_server, variable, set_variable, expecte
         values = kernel.get_variable(variable, "text/plain")
 
     assert values == expected
+
+
+@pytest.mark.asyncio
+async def test_multi_execution_in_event_loop(jupyter_server):
+    port, token = jupyter_server
+
+    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+        all = await asyncio.gather(
+            asyncio.to_thread(
+                kernel.execute,
+                """import os
+from platform import node
+import time
+time.sleep(5)
+print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
+"""
+            ),
+            asyncio.to_thread(
+                kernel.execute,
+                """import time
+time.sleep(1)
+print("Hello")"""
+            ),
+        )
+
+        assert all[0]["execution_count"] == 1
+        assert all[0]["outputs"] == [
+            {
+                "output_type": "stream",
+                "name": "stdout",
+                "text": f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.\n",
+            }
+        ]
+        assert all[0]["status"] == "ok"
+
+        assert all[1]["execution_count"] == 2
+        assert all[1]["outputs"] == [
+            {
+                "output_type": "stream",
+                "name": "stdout",
+                "text": "Hello\n",
+            }
+        ]
+        assert all[1]["status"] == "ok"
