@@ -8,6 +8,22 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.5.1
+
+([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.5.0...7c41f7d86d5ba49414b702dcc60a0a41159a98ba))
+
+### Bugs fixed
+
+- Use lock to deal with concurrent interactive execution calls [#19](https://github.com/datalayer/jupyter-kernel-client/pull/19) ([@fcollonval](https://github.com/fcollonval))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2025-01-29&to=2025-02-27&type=c))
+
+[@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2025-01-29..2025-02-27&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.5.0
 
 ([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.4.0...b3263cc96e5a1e415d19289fde61935019170d6b))
@@ -26,8 +42,6 @@
 ([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2024-12-18&to=2025-01-29&type=c))
 
 [@echarles](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Aecharles+updated%3A2024-12-18..2025-01-29&type=Issues) | [@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2024-12-18..2025-01-29&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.4.0
 
