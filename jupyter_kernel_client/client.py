@@ -219,6 +219,16 @@ class KernelClient(LoggingConfigurable):
             else None
         )
 
+    @property
+    def username(self) -> str:
+        """Client owner username."""
+        return self._manager.username
+
+    @property
+    def server_url(self) -> str:
+        """Kernel server URL."""
+        return self._manager.server_url
+
     def execute(
         self,
         code: str,
