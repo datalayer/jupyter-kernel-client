@@ -8,6 +8,22 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 0.6.0
+
+([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.5.1...e39e436565640e773f875321a3acc47eed2449b6))
+
+### Enhancements made
+
+- Expose runtime base url [#21](https://github.com/datalayer/jupyter-kernel-client/pull/21) ([@fcollonval](https://github.com/fcollonval))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2025-02-27&to=2025-03-06&type=c))
+
+[@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2025-02-27..2025-03-06&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
 ## 0.5.1
 
 ([Full Changelog](https://github.com/datalayer/jupyter-kernel-client/compare/v0.5.0...7c41f7d86d5ba49414b702dcc60a0a41159a98ba))
@@ -21,8 +37,6 @@
 ([GitHub contributors page for this release](https://github.com/datalayer/jupyter-kernel-client/graphs/contributors?from=2025-01-29&to=2025-02-27&type=c))
 
 [@fcollonval](https://github.com/search?q=repo%3Adatalayer%2Fjupyter-kernel-client+involves%3Afcollonval+updated%3A2025-01-29..2025-02-27&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 0.5.0
 
