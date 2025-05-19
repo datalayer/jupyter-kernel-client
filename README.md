@@ -8,16 +8,19 @@
 
 [![Become a Sponsor](https://img.shields.io/static/v1?label=Become%20a%20Sponsor&message=%E2%9D%A4&logo=GitHub&style=flat&color=1ABC9C)](https://github.com/sponsors/datalayer)
 
-# Jupyter Kernel Client (via WebSocket and HTTP)
+# Jupyter Kernel Client through HTTP and WebSocket
 
 [![Github Actions Status](https://github.com/datalayer/jupyter-kernel-client/workflows/Build/badge.svg)](https://github.com/datalayer/jupyter-kernel-client/actions/workflows/build.yml)
+
 [![PyPI - Version](https://img.shields.io/pypi/v/jupyter-kernel-client)](https://pypi.org/project/jupyter-kernel-client)
 
-Jupyter Kernel Client allows you to connect via WebSocket and HTTP to Jupyter Kernels. It also provide a easy to use interactive Konsole (console for **K**ernels).
+`Jupyter Kernel Client` allows you to connect to live Jupyter Kernels through HTTP and WebSocket.
+
+It also provide a easy to use interactive Konsole (console for **K**ernels).
 
 To install the library, run the following command.
 
-```sh
+```bash
 pip install jupyter_kernel_client
 ```
 
@@ -25,19 +28,17 @@ pip install jupyter_kernel_client
 
 Check you have a Jupyter Server with ipykernel running somewhere. You can install those packages using:
 
-```sh
+```bash
 pip install jupyter-server ipykernel
 ```
 
-### Kernel Client
-
 1. Start a Jupyter Server.
 
-```sh
-jupyter server --port 8888 --IdentityProvider.token MY_TOKEN
+```bash
+jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
 ```
 
-2. Launch `python` in a terminal and execute the following snippet (update the server_url and token).
+2. Launch a Python REPL in a terminal and execute the following snippet (update the server_url and token).
 
 ```py
 import os
@@ -45,14 +46,13 @@ import os
 from platform import node
 from jupyter_kernel_client import KernelClient
 
-
 with KernelClient(server_url="http://localhost:8888", token="MY_TOKEN") as kernel:
-    reply = kernel.execute(
-        """import os
+    code = """import os
 from platform import node
 print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
 """
-    )
+    reply = kernel.execute(code)
+    print(reply)
     assert reply["execution_count"] == 1
     assert reply["outputs"] == [
         {
@@ -64,31 +64,31 @@ print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
     assert reply["status"] == "ok"
 ```
 
-### Jupyter Konsole (aka Console for Kernels)
+### Jupyter Konsole aka Console for Kernels
 
 This package can be used to open a Jupyter Console to a Jupyter Kernel 🐣.
 
 1. Install the optional dependencies.
 
-```sh
+```bash
 pip install jupyter-kernel-client[konsole]
 ```
 
 2. Start a Jupyter Server.
 
-```sh
-jupyter server --port 8888 --IdentityProvider.token MY_TOKEN
+```bash
+jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
 ```
 
 3. Start the konsole and execute code.
 
-```sh
+```bash
 jupyter konsole --url http://localhost:8888 --token MY_TOKEN
 ```
 
-```sh
-[KonsoleApp] KernelHttpManager created a new kernel: ...
-Jupyter Kernel console 0.2.0
+```bash
+[KonsoleApp] KernelHttpManager created a new kernel:...
+Jupyter Kernel console...
 
 Python 3.12.7 | packaged by conda-forge | (main, Oct  4 2024, 16:05:46) [GCC 13.3.0]
 Type 'copyright', 'credits' or 'license' for more information
@@ -104,7 +104,7 @@ In [2]:
 
 To remove the library, execute:
 
-```sh
+```bash
 pip uninstall jupyter_kernel_client
 ```
 
@@ -112,11 +112,10 @@ pip uninstall jupyter_kernel_client
 
 ### Development install
 
-```sh
+```bash
 # Clone the repo to your local environment
 # Change directory to the jupyter_kernel_client directory
-# Install package in development mode - will automatically enable
-# The server extension.
+# Install package in development mode, this will automatically enable the server extension.
 pip install -e ".[konsole,test,lint,typing]"
 ```
 
@@ -124,19 +123,19 @@ pip install -e ".[konsole,test,lint,typing]"
 
 Install dependencies:
 
-```sh
+```bash
 pip install -e ".[test]"
 ```
 
 To run the python tests, use:
 
-```sh
+```bash
 pytest
 ```
 
 ### Development uninstall
 
-```sh
+```bash
 pip uninstall jupyter_kernel_client
 ```
 

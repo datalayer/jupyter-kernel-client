@@ -27,3 +27,15 @@ build:
 
 clean: ## clean
 	git clean -fdx
+
+jupyter-server: ## jupyter-server
+	jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
+
+publish-pypi: # publish the pypi package
+	git clean -fdx && \
+		python -m build
+	@exec echo
+	@exec echo twine upload ./dist/*-py3-none-any.whl
+	@exec echo
+	@exec echo https://pypi.org/project/jupyter-kernel-client/#history
+

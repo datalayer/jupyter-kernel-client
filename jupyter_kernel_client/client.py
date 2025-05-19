@@ -12,12 +12,12 @@ from functools import partial
 from traitlets import Type
 from traitlets.config import LoggingConfigurable
 
-from .constants import REQUEST_TIMEOUT
-from .log import get_logger
-from .manager import KernelHttpManager
-from .models import VariableDescription
-from .snippets import SNIPPETS_REGISTRY
-from .utils import UTC
+from jupyter_kernel_client.constants import REQUEST_TIMEOUT
+from jupyter_kernel_client.log import get_logger
+from jupyter_kernel_client.manager import KernelHttpManager
+from jupyter_kernel_client.models import VariableDescription
+from jupyter_kernel_client.snippets import SNIPPETS_REGISTRY
+from jupyter_kernel_client.utils import UTC
 
 
 def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> set[int]:  # noqa: C901

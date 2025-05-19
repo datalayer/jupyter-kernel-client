@@ -26,9 +26,9 @@ from jupyter_client.clientabc import KernelClientABC
 from jupyter_client.jsonutil import extract_dates
 from jupyter_client.session import Message, Session
 
-from .constants import REQUEST_TIMEOUT
-from .log import get_logger
-from .utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1
+from jupyter_kernel_client.constants import REQUEST_TIMEOUT
+from jupyter_kernel_client.log import get_logger
+from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1
 
 
 class WSSession(Session):

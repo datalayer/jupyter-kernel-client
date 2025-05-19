@@ -12,7 +12,7 @@ from traitlets import (
     default,
 )
 
-from . import __version__
+from jupyter_kernel_client import __version__
 
 try:
     from jupyter_console.ptshell import ZMQTerminalInteractiveShell

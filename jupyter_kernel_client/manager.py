@@ -16,8 +16,8 @@ from traitlets import DottedObjectName, Type, default, observe
 from traitlets.config import LoggingConfigurable
 from traitlets.utils.importstring import import_item
 
-from .constants import REQUEST_TIMEOUT
-from .utils import url_path_join, utcnow
+from jupyter_kernel_client.constants import REQUEST_TIMEOUT
+from jupyter_kernel_client.utils import url_path_join, utcnow
 
 HTTP_PROTOCOL_REGEXP = re.compile(r"^http")
 

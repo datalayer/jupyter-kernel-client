@@ -12,9 +12,9 @@ from jupyter_core.application import JupyterApp, base_aliases, base_flags
 from traitlets import CBool, CUnicode, Dict, Type, Unicode
 from traitlets.config import boolean_flag, catch_config_error
 
-from . import __version__
-from .manager import KernelHttpManager
-from .shell import WSTerminalInteractiveShell
+from jupyter_kernel_client import __version__
+from jupyter_kernel_client.manager import KernelHttpManager
+from jupyter_kernel_client.shell import WSTerminalInteractiveShell
 
 # -----------------------------------------------------------------------------
 # Globals
