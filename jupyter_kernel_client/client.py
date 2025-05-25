@@ -54,30 +54,30 @@ def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> s
     if msg_type == "execute_result":
         output = {
             "output_type": msg_type,
-            "metadata": content["metadata"],
-            "data": content["data"],
-            "execution_count": content["execution_count"],
+            "metadata": content.get("metadata"),
+            "data": content.get("data"),
+            "execution_count": content.get("execution_count"),
         }
     elif msg_type == "stream":
         # FIXME Logic is quite complex at https://github.com/jupyterlab/jupyterlab/blob/7ae2d436fc410b0cff51042a3350ba71f54f4445/packages/outputarea/src/model.ts#L518
         output = {
             "output_type": msg_type,
-            "name": content["name"],
-            "text": content["text"],
+            "name": content.get("name"),
+            "text": content.get("text"),
         }
     elif msg_type == "display_data":
         output = {
             "output_type": msg_type,
-            "metadata": content["metadata"],
-            "data": content["data"],
-            "transient": content["transient"],
+            "metadata": content.get("metadata"),
+            "data": content.get("data"),
+            "transient": content.get("transient"),
         }
     elif msg_type == "error":
         output = {
             "output_type": msg_type,
-            "ename": content["ename"],
-            "evalue": content["evalue"],
-            "traceback": content["traceback"],
+            "ename": content.get("ename"),
+            "evalue": content.get("evalue"),
+            "traceback": content.get("traceback"),
         }
     elif msg_type == "clear_output":
         # Ignore wait as we run without display
