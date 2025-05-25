@@ -37,7 +37,7 @@ konsole = [
 ]
 test = [
   "ipykernel",
-  "jupyter_server>=2,<3",
+  "jupyter_server>=2.10,<3",
   "pytest>=7.0",
   "pytest-asyncio",
   "pytest-timeout",
