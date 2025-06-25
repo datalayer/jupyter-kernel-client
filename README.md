@@ -15,6 +15,8 @@
 
 `Jupyter Kernel Client` allows you to connect to live Jupyter Kernels through HTTP and WebSocket.
 
+> A `Kernel` is the process responsible to execute the notebook code.
+
 It also provide a easy to use interactive Konsole (console for **K**ernels).
 
 To install the library, run the following command.
@@ -34,10 +36,11 @@ pip install jupyter-server ipykernel
 1. Start a Jupyter Server.
 
 ```bash
+# make jupyter-server
 jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
 ```
 
-2. Launch a Python REPL in a terminal and execute the following snippet (update the server_url and token).
+2. Launch a Python REPL in a terminal with `ipython` (or `jupyter console`). Execute the following snippet (update the server_url and token if needed).
 
 ```py
 import os
@@ -63,6 +66,12 @@ print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
     assert reply["status"] == "ok"
 ```
 
+Check the response.
+
+```json
+{"execution_count": 1, "outputs": [{"output_type": "stream", "name": "stdout", "text": "Hey echarles from eric.\n"}], "status": "ok"}
+```
+
 ### Jupyter Konsole aka Console for Kernels
 
 This package can be used to open a Jupyter Console to a Jupyter Kernel 🐣.
@@ -76,25 +85,23 @@ pip install jupyter-kernel-client[konsole]
 2. Start a Jupyter Server.
 
 ```bash
+# make jupyter-server
 jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
 ```
 
 3. Start the konsole and execute code.
 
 ```bash
+# make jupyter-konsole
 jupyter konsole --url http://localhost:8888 --token MY_TOKEN
 ```
 
 ```bash
 [KonsoleApp] KernelHttpManager created a new kernel:...
-Jupyter Kernel console...
+Jupyter Konsole...
 
-Python 3.12.7 | packaged by conda-forge | (main, Oct  4 2024, 16:05:46) [GCC 13.3.0]
-Type 'copyright', 'credits' or 'license' for more information
-IPython 8.30.0 -- An enhanced Interactive Python. Type '?' for help.
-
-In [1]: print("hello")
-hello
+In [1]: 1+1
+2
 
 In [2]:
 ```

@@ -31,6 +31,9 @@ clean: ## clean
 jupyter-server: ## jupyter-server
 	jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
 
+jupyter-konsole: ## jupyter-konsole
+	jupyter konsole --url http://localhost:8888 --token MY_TOKEN
+
 publish-pypi: # publish the pypi package
 	git clean -fdx && \
 		python -m build

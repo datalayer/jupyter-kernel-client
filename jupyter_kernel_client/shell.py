@@ -23,7 +23,7 @@ try:
 
         @default("banner")
         def _default_banner(self):
-            return "Jupyter Kernel console {version}\n\n{kernel_banner}"
+            return "Jupyter Konsole {version}\n\n{kernel_banner}"
 
         async def handle_external_iopub(self, loop=None):
             while self.keep_running:
