@@ -27,7 +27,7 @@ pip install jupyter_kernel_client
 
 ## Usage
 
-Check you have a Jupyter Server with ipykernel running somewhere. You can install those packages using:
+Check you have a Jupyter Server with ipykernel running somewhere. You can install those packages with the following command.
 
 ```bash
 pip install jupyter-server ipykernel
@@ -40,7 +40,7 @@ pip install jupyter-server ipykernel
 jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
 ```
 
-2. Launch a Python REPL in a terminal with `ipython` (or `jupyter console`). Execute the following snippet (update the server_url and token if needed).
+2. Launch a IPython REPL in a terminal with `ipython` (or `jupyter console`). Execute the following snippet (update the server_url and token if needed).
 
 ```py
 import os
@@ -108,7 +108,7 @@ In [2]:
 
 ## Uninstall
 
-To remove the library, execute:
+To remove the library, execute the following command.
 
 ```bash
 pip uninstall jupyter_kernel_client
@@ -127,13 +127,13 @@ pip install -e ".[konsole,test,lint,typing]"
 
 ### Running Tests
 
-Install dependencies:
+Install dependencies.
 
 ```bash
 pip install -e ".[test]"
 ```
 
-To run the python tests, use:
+Run the python tests.
 
 ```bash
 pytest
