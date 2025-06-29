@@ -112,7 +112,7 @@ class KernelClient(LoggingConfigurable):
         the server URL and the authentication token from the link looking like::
 
             http://localhost:8888/...?token=abcedfgh...
-            <--  server URL   -->           <--token-->
+            <--  server URL   -->     <--token-->
 
         In another terminal, start a Python console. In which you can test the
         following snippet::
