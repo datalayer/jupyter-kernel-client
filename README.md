@@ -72,7 +72,7 @@ Check the response.
 {"execution_count": 1, "outputs": [{"output_type": "stream", "name": "stdout", "text": "Hey echarles from eric.\n"}], "status": "ok"}
 ```
 
-Instead of using the client as context manager, you can call the `start()` and `stop()` methods.
+Instead of using the kernel client as context manager, you can call the `start()` and `stop()` methods.
 
 ```py
 from jupyter_kernel_client import KernelClient

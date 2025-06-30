@@ -185,7 +185,7 @@ class KernelClient(LoggingConfigurable):
 
     @property
     def has_kernel(self):
-        """Is the client connected to an running kernel process?"""
+        """Is the kernel client connected to an running kernel process?"""
         return self._manager.has_kernel
 
     @property
@@ -380,7 +380,7 @@ class KernelClient(LoggingConfigurable):
     ) -> None:
         """Connect to a kernel.
 
-        If no ``kernel_id`` is provided when creating the client, it will
+        If no ``kernel_id`` is provided when creating the kernel client, it will
         start a new kernel using the provided ``name`` and ``path``.
 
         Args:
@@ -389,6 +389,7 @@ class KernelClient(LoggingConfigurable):
                 It may not apply depending on the kernel provider.
             timeout: Request timeout in seconds
         """
+        self.log.info("Starting the kernel client…")
         if not self._manager.has_kernel:
             self._manager.start_kernel(name=name, path=path, timeout=timeout)
 
@@ -404,11 +405,12 @@ class KernelClient(LoggingConfigurable):
 
         Args:
             shutdown_kernel: Shut down the connected kernel;
-                default True if the kernel was started by the client.
+                default True if the kernel was started by the kernel client.
             shutdown_now: Whether to shut down the kernel now through a HTTP request
                 or defer it by sending a shutdown-request message to the kernel process
             timeout: Request timeout in seconds
         """
+        self._log.info("Stopping the kernel client…")
         if self._manager.has_kernel:
             self._manager.client.stop_channels()
             shutdown = self._own_kernel if shutdown_kernel is None else shutdown_kernel

@@ -114,7 +114,7 @@ class KonsoleApp(JupyterApp):
 
     username = Unicode(
         os.environ.get("USER", "username"),
-        help="""Username for the client. Default is your system username.""",
+        help="""Username for the kernel client. Default is your system username.""",
         config=True,
     )
 
