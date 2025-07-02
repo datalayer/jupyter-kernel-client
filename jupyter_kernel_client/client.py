@@ -410,7 +410,7 @@ class KernelClient(LoggingConfigurable):
                 or defer it by sending a shutdown-request message to the kernel process
             timeout: Request timeout in seconds
         """
-        self._log.info("Stopping the kernel client…")
+        self.log.info("Stopping the kernel client…")
         if self._manager.has_kernel:
             self._manager.client.stop_channels()
             shutdown = self._own_kernel if shutdown_kernel is None else shutdown_kernel
