@@ -17,7 +17,7 @@
 
 > A `Kernel` is the process responsible to execute the notebook code.
 
-It also provide a easy to use interactive Konsole (console for **K**ernels).
+`Jupyter Kernel Client` also provides a easy to use interactive Konsole (console for **K**ernels aka REPL, Read-Evaluate-Print-Loop).
 
 To install the library, run the following command.
 
@@ -72,6 +72,39 @@ Check the response.
 {"execution_count": 1, "outputs": [{"output_type": "stream", "name": "stdout", "text": "Hey echarles from eric.\n"}], "status": "ok"}
 ```
 
+Instead of using the kernel client as context manager, you can call the `start()` and `stop()` methods.
+
+```py
+from jupyter_kernel_client import KernelClient
+
+kernel = KernelClient(server_url="http://localhost:8888", token="MY_TOKEN")
+kernel.start()
+reply = kernel.execute(code)
+print(reply)
+kernel.stop()
+```
+
+## Connect to an existing Kernel
+
+First start JupyterLab, open a Notebook with a Kernel and take not of the `Kernel ID`.
+
+> TODO: Document how to get the `Kernel ID`.
+
+```bash
+make jupyterlab
+```
+
+You can now connect to the existing Kernel and run code (do not invoke `stop`).
+
+```py
+from jupyter_kernel_client import KernelClient
+
+kernel = KernelClient(server_url="http://localhost:8888", kernel_id="83ef59b7-9c78-40bd-8cc2-4447635e7d0b", token="MY_TOKEN")
+kernel.start()
+reply = kernel.execute("x=1")
+print(reply)
+```
+
 ### Jupyter Konsole aka Console for Kernels
 
 This package can be used to open a Jupyter Console to a Jupyter Kernel 🐣.
@@ -102,8 +135,6 @@ Jupyter Konsole...
 
 In [1]: 1+1
 2
-
-In [2]:
 ```
 
 ## Uninstall

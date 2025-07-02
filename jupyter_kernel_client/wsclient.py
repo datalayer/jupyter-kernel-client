@@ -423,7 +423,7 @@ class KernelWebSocketClient(KernelClientABC):
     token: str | None
         Authentication token to the server; default None
     username: str | None
-        User connecting with the client; default None
+        User connecting with the kernel client; default None
     timeout: float
         Timeout for request to the server; default REQUEST_TIMEOUT
     log: logging.Logger | None
@@ -452,7 +452,7 @@ class KernelWebSocketClient(KernelClientABC):
         reconnect_interval: int = 0,
         **kwargs,
     ):
-        """Initialize the client."""
+        """Initialize the kernel client."""
         self.allow_stdin = False  # Will change when the stdin channel opens
         self.shutting_down = False
         self.kernel_ws_endpoint = endpoint
@@ -521,7 +521,7 @@ class KernelWebSocketClient(KernelClientABC):
         hb: bool = True,
         control: bool = True,
     ) -> None:
-        """Start the channels for the client."""
+        """Start the channels for the kernel client."""
         self.log.debug("Connecting kernel client to %s", self.kernel_ws_endpoint)
 
         url = self.kernel_ws_endpoint
@@ -557,7 +557,7 @@ class KernelWebSocketClient(KernelClientABC):
             self.control_channel.start()
 
     def stop_channels(self) -> None:
-        """Stop the channels for the client."""
+        """Stop the channels for the kernel client."""
         # Terminate thread, close socket and clear queues.
         if self.shutting_down:
             return
