@@ -30,6 +30,8 @@ jobs:
         uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
 
       - name: Install the extension
+        env:
+          DATALAYER_PLATFORM_DIRS: "1"
         run: |
           python -m pip install ".[test]"
           python -m pip install git+https://github.com/goanpeca/core@remove/variable-handling
