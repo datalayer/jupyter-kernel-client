@@ -8,10 +8,13 @@ import os
 import time
 
 import pytest
-from dotenv import load_dotenv
 from datalayer_core import DatalayerClient
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 
 DATALAYER_TEST_TOKEN = os.environ.get("DATALAYER_TEST_TOKEN")
