@@ -1,0 +1,53 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+    steps:
+
+      - name: Install deps
+        run: |
+          sudo apt install libdbus-1-3 libdbus-1-dev libglib2.0-dev
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git to use https
+        run: git config --global hub.protocol https
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+
+      - name: Install dev tools
+        run: |
+          uv pip install .[test]
+          uv pip install git+https://github.com/goanpeca/core.git@add/variable-definition
+
+      - name: Unlock keyring
+        uses: t1m0thyj/unlock-keyring@v1
+
+      - name: Run basic tests
+        env:
+          DATALAYER_TEST_TOKEN: ${{ secrets.DATALAYER_TEST_TOKEN }}
+          DATALAYER_TOKEN: ${{ secrets.DATALAYER_TEST_TOKEN }}
+          DATALAYER_PLATFORM_DIRS: "1"
+        run: |
+          pytest jupyter_kernel_client/tests/ --cov=jupyter_kernel_client --cov-report term-missing

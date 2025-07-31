@@ -863,6 +863,7 @@ class KernelWebSocketClient(KernelClientABC):
         user_expressions: dict[str, t.Any] | None = None,
         allow_stdin: bool | None = None,
         stop_on_error: bool = True,
+        variables: dict[str, t.Any] | None = None,
     ) -> str:
         """Execute code in the kernel.
 
@@ -894,6 +895,9 @@ class KernelWebSocketClient(KernelClientABC):
         stop_on_error: bool, optional (default True)
             Flag whether to abort the execution queue, if an exception is encountered.
 
+        variables: dict[str, t.Any] | None = None
+            Variables to be injected into the user's code.
+
         Returns
         -------
         The msg_id of the message sent.
@@ -908,6 +912,10 @@ class KernelWebSocketClient(KernelClientABC):
             message = f"code {code!r} must be a string"
             raise ValueError(message)
         validate_string_dict(user_expressions)
+
+        # Add variables
+        for name, value in (variables or {}).items():
+            code = f"{name} = {value!r}\n" + code
 
         # Create class for content/msg creation. Related to, but possibly
         # not in Session.
@@ -934,6 +942,7 @@ class KernelWebSocketClient(KernelClientABC):
         timeout: float | None = None,
         output_hook: t.Callable | None = None,
         stdin_hook: t.Callable | None = None,
+        variables: dict[str, t.Any] | None = None,
     ) -> dict[str, t.Any]:
         """Execute code in the kernel interactively
 
@@ -977,6 +986,9 @@ class KernelWebSocketClient(KernelClientABC):
             Function to be called with stdin_request messages.
             If not specified, input/getpass will be called.
 
+        variables: dict[str, t.Any] | None = None
+            Variables to be injected into the user's code.
+
         Returns
         -------
         reply: dict
@@ -1013,6 +1025,7 @@ class KernelWebSocketClient(KernelClientABC):
                 user_expressions=user_expressions,
                 allow_stdin=allow_stdin,
                 stop_on_error=stop_on_error,
+                variables=variables,
             )
 
             # wait for output and redisplay it

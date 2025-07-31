@@ -239,6 +239,7 @@ class KernelClient(LoggingConfigurable):
         stop_on_error: bool = True,
         timeout: float = REQUEST_TIMEOUT,
         stdin_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
+        variables: dict[str, t.Any] | None = None,
     ) -> dict[str, t.Any]:
         """Execute code in the kernel
 
@@ -260,6 +261,8 @@ class KernelClient(LoggingConfigurable):
             stdin_hook:
                 Function to be called with stdin_request messages.
                 If not specified, input/getpass will be called.
+            variables: dict[str, t.Any] | None = None
+                Variables to be injected into the user's code.
 
         Returns:
             Execution results {"execution_count": int | None, "status": str, "outputs": list[dict]}
@@ -278,6 +281,7 @@ class KernelClient(LoggingConfigurable):
             timeout=timeout,
             output_hook=partial(output_hook, outputs),
             stdin_hook=stdin_hook,
+            variables=variables,
         )
 
         reply_content = reply["content"]
@@ -305,6 +309,7 @@ class KernelClient(LoggingConfigurable):
         timeout: float | None = REQUEST_TIMEOUT,
         output_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
         stdin_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
+        variables: dict[str, t.Any] | None = None,
     ) -> dict[str, t.Any]:
         """Execute code in the kernel with low-level API
 
@@ -337,6 +342,8 @@ class KernelClient(LoggingConfigurable):
             stdin_hook:
                 Function to be called with stdin_request messages.
                 If not specified, input/getpass will be called.
+            variables: dict[str, t.Any] | None = None
+                Variables to be injected into the user's code.
 
         Returns:
             The reply message for this request
@@ -351,6 +358,7 @@ class KernelClient(LoggingConfigurable):
             timeout=timeout,
             output_hook=output_hook,
             stdin_hook=stdin_hook,
+            variables=variables,
         )
 
     def interrupt(self, timeout: float = REQUEST_TIMEOUT) -> None:
