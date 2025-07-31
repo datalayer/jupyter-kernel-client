@@ -39,7 +39,7 @@ jobs:
       - name: Install dev tools
         run: |
           uv pip install .[test]
-          uv pip install git+https://github.com/goanpeca/core.git@add/variable-definition
+          uv pip install git+https://github.com/goanpeca/core@remove/variable-handling
 
       - name: Unlock keyring
         uses: t1m0thyj/unlock-keyring@v1

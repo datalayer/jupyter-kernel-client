@@ -32,7 +32,7 @@ jobs:
       - name: Install the extension
         run: |
           python -m pip install ".[test]"
-          python -m pip install git+https://github.com/goanpeca/core@add/variable-definition
+          python -m pip install git+https://github.com/goanpeca/core@remove/variable-handling
 
       - name: Test the extension
         run: |
