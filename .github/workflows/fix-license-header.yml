@@ -28,7 +28,7 @@ jobs:
 
       - name: Fix License Header
         # pin to include https://github.com/apache/skywalking-eyes/pull/168
-        uses: apache/skywalking-eyes/header@9f0a5c0571ed1a0c13a16808cd8f59bc22f03883
+        uses: apache/skywalking-eyes/header@07a607ff5b0759f5ed47306c865aac50fe9b3985
         with:
           mode: fix
 
