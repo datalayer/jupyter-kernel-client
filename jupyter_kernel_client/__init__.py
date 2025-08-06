@@ -12,7 +12,6 @@ from jupyter_kernel_client.models import VariableDescription
 from jupyter_kernel_client.snippets import SNIPPETS_REGISTRY, LanguageSnippets
 from jupyter_kernel_client.wsclient import KernelWebSocketClient
 
-
 __all__ = [
     "SNIPPETS_REGISTRY",
     "KernelClient",

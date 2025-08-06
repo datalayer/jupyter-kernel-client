@@ -46,10 +46,25 @@ class LanguageSnippets:
 
     The snippet will be formatted with the variables:
     - ``name``: Variable name
+
+    Its execution must return the variable value.
+    """
+    set_variable: str
+    """Snippet to set a kernel variable value.
+
+    The snippet will be formatted with the variables:
+    - ``name``: Variable name
+    - ``value``: b64 encoded string
+    """
+    get_variable_mimetypes: str
+    """Snippet to get a kernel variable available mimetypes.
+
+    The snippet will be formatted with the variables:
+    - ``name``: Variable name
     - ``mimetype``: Wanted mimetype for the variable; default ``None``, i.e. unspecified format.
 
-    Its execution must return an output of the wanted mimetype or the best possible
-    views if ``None`` is specified.
+    Its execution must return a ``data`` dictionary and a ``metadata`` dictionary where the keys
+    of the ``data`` dictionary correspond to the available mimetypes.
     """
 
 
@@ -105,9 +120,39 @@ class SnippetsRegistry:
 
         return self._snippets[language].get_variable
 
+    def get_set_variable(self, language: str) -> str:
+        """Get set variable snippet for the given language.
+
+        Args:
+            language: the targeted programming language
+        Returns:
+            The get variable snippet
+        Raises:
+            ValueError: if no snippet is defined for ``language``
+        """
+        if language not in self._snippets:
+            raise ValueError(f"No snippet for language '{language}'.")
+
+        return self._snippets[language].set_variable
+
+    def get_get_variable_mimetypes(self, language: str) -> str:
+        """Get get variable mimetypes snippet for the given language.
+
+        Args:
+            language: the targeted programming language
+        Returns:
+            The get variable mimetypes snippet
+        Raises:
+            ValueError: if no snippet is defined for ``language``
+        """
+        if language not in self._snippets:
+            raise ValueError(f"No snippet for language '{language}'.")
+
+        return self._snippets[language].get_variable_mimetypes
+
 
 PYTHON_SNIPPETS = LanguageSnippets(
-    list_variables="""def _list_variables():
+    list_variables="""def ___list_variables():
     from IPython.display import display
     import json
     from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType, MethodWrapperType, ModuleType, TracebackType
@@ -149,15 +194,26 @@ PYTHON_SNIPPETS = LanguageSnippets(
 
     display({"application/json": _vars}, raw=True)
 
-_list_variables()
+___list_variables()
 """,  # noqa E501
-    get_variable="""def _get_variable(name, mimetype):
+    get_variable="""from jupyter_mimetypes import get_variable as ___get_variable
+___get_variable("{name}", None, globals_dict=globals())
+""",
+    set_variable="""from jupyter_mimetypes import set_variable as ___set_variable
+
+___data = {data!r}
+___metadata = {metadata!r}
+___set_variable(name="{name}", data=___data, metadata=___metadata, globals_dict=globals())
+del(___data)
+del(___metadata)
+""",
+    get_variable_mimetypes="""def ___get_variable_mimetypes(name, mimetype):
     from IPython.display import display
 
     variable = globals()[name]
     include = None if mimetype is None else [mimetype]
     display(variable, include=include)
-_get_variable("{name}", "{mimetype}" if "{mimetype}" != "None" else None)
+___get_variable_mimetypes("{name}", "{mimetype}" if "{mimetype}" != "None" else None)
 """,
 )
 

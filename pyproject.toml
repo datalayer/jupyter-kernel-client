@@ -26,8 +26,10 @@ classifiers = [
 dependencies = [
   "jupyter_core",
   "jupyter_client>=8.6.3",
+  "jupyter-mimetypes",
   "requests",
   "traitlets>=5.3",
+  "typing-extensions",
   "websocket-client",
 ]
 
@@ -38,8 +40,11 @@ konsole = [
 test = [
   "ipykernel",
   "jupyter_server>=2.10,<3",
+  "numpy",
+  "pandas",
   "pytest>=7.0",
   "pytest-asyncio",
+  "pytest-cov",
   "pytest-timeout",
 ]
 lint = [
