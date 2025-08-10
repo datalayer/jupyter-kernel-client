@@ -35,7 +35,7 @@ jobs:
 
       - name: Test the extension
         run: |
-          pytest .
+          pytest jupyter_kernel_client/tests/ --cov=jupyter_kernel_client --cov-report term-missing
 
       - name: Build the extension
         run: |

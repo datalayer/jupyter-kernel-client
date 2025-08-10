@@ -44,4 +44,3 @@ publish-pypi: # publish the pypi package
 	@exec echo twine upload ./dist/*-py3-none-any.whl
 	@exec echo
 	@exec echo https://pypi.org/project/jupyter-kernel-client/#history
-

@@ -9,6 +9,7 @@ import logging
 import typing as t
 from functools import partial
 
+from jupyter_mimetypes import deserialize_object, serialize_object
 from traitlets import Type
 from traitlets.config import LoggingConfigurable
 
@@ -175,6 +176,16 @@ class KernelClient(LoggingConfigurable):
                 "Failed to stop the kernel client for %s.", self._manager.kernel_url, exc_info=e
             )
 
+    def _set_variables(self, variables: dict[str, t.Any] | None) -> None:
+        """Set variables in the kernel's globals dictionary.
+
+        Args:
+            variables: A mapping of variable names to their values to be set in the kernel's
+                globals dictionary.
+        """
+        for name, value in (variables or {}).items():
+            self.set_variable(name, value)
+
     @property
     def execution_state(self) -> str | None:
         """Kernel process execution state.
@@ -239,6 +250,7 @@ class KernelClient(LoggingConfigurable):
         stop_on_error: bool = True,
         timeout: float = REQUEST_TIMEOUT,
         stdin_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
+        variables: dict[str, t.Any] | None = None,
     ) -> dict[str, t.Any]:
         """Execute code in the kernel
 
@@ -260,6 +272,8 @@ class KernelClient(LoggingConfigurable):
             stdin_hook:
                 Function to be called with stdin_request messages.
                 If not specified, input/getpass will be called.
+            variables: dict[str, t.Any] | None = None
+                A mapping of variable names to their values to be set in the kernel's
 
         Returns:
             Execution results {"execution_count": int | None, "status": str, "outputs": list[dict]}
@@ -267,7 +281,7 @@ class KernelClient(LoggingConfigurable):
             The outputs will follow the structure of nbformat outputs.
         """
         outputs = []
-
+        self._set_variables(variables)
         reply = self._manager.client.execute_interactive(
             code,
             silent=silent,
@@ -305,6 +319,7 @@ class KernelClient(LoggingConfigurable):
         timeout: float | None = REQUEST_TIMEOUT,
         output_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
         stdin_hook: t.Callable[[dict[str, t.Any]], None] | None = None,
+        variables: dict[str, t.Any] | None = None,
     ) -> dict[str, t.Any]:
         """Execute code in the kernel with low-level API
 
@@ -337,10 +352,13 @@ class KernelClient(LoggingConfigurable):
             stdin_hook:
                 Function to be called with stdin_request messages.
                 If not specified, input/getpass will be called.
+            variables: dict[str, t.Any] | None = None
+                A mapping of variable names to their values to be set in the kernel's
 
         Returns:
             The reply message for this request
         """
+        self._set_variables(variables)
         return self._manager.client.execute_interactive(
             code,
             silent=silent,
@@ -420,10 +438,138 @@ class KernelClient(LoggingConfigurable):
     #
     # Variables related methods
     #
-    def get_variable(
+    def set_variable(self, name: str, value: t.Any) -> None:
+        """Set a kernel variable.
+
+        This function serializes the value using the kernel introspection and sets it
+        as a variable in the kernel's globals dictionary.
+
+        Args:
+            name: Variable name
+            value: Variable value to set
+
+        Raises:
+            ValueError: If the kernel programming language is not supported
+            RuntimeError: If the kernel introspection failed
+        """
+        kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
+        if kernel_language not in SNIPPETS_REGISTRY.available_languages:
+            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+You can set them yourself using:
+
+    from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
+    SNIPPETS_REGISTRY.register(
+        "my-language",
+        LanguageSnippets(
+            list_variables="",
+            get_variable="",
+            set_variable="",
+            get_variable_mimetypes="",
+        )
+    )
+""")
+        snippet = SNIPPETS_REGISTRY.get_set_variable(kernel_language)
+        data, metadata = serialize_object(value)
+        results = self.execute(snippet.format(name=name, data=data, metadata=metadata), silent=True)
+        self.log.debug("Set variables: %s", results)
+        if results["status"] == "ok":
+            pass
+        else:
+            raise RuntimeError(f"Failed to set variable {name}.")
+
+    def get_variable(self, name: str) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
+        """Get a kernel variable value.
+
+        This function serializes the value on the server and then deserializes it on the kernel
+        via ``jupyter-mimetypes``.
+
+        Args:
+            name: Variable name
+
+        Returns:
+            The value of the variable.
+        Raises:
+            ValueError: If the kernel programming language is not supported
+            RuntimeError: If the kernel introspection failed
+        """
+        kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
+        if kernel_language not in SNIPPETS_REGISTRY.available_languages:
+            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+You can set them yourself using:
+
+    from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
+    SNIPPETS_REGISTRY.register(
+        "my-language",
+        LanguageSnippets(
+            list_variables="",
+            get_variable="",
+            set_variable="",
+            get_variable_mimetypes="",
+        )
+    )
+""")
+
+        snippet = SNIPPETS_REGISTRY.get_get_variable(kernel_language)
+        results = self.execute(snippet.format(name=name), silent=True)
+        self.log.debug("Kernel variables: %s", results)
+
+        if results["status"] == "ok" and results["outputs"]:
+            data = results["outputs"][0]["data"]
+            metadata = results["outputs"][0].get("metadata", {})
+            return deserialize_object(data, metadata)
+        else:
+            raise RuntimeError(f"Failed to get variable {name}.")
+
+    def list_variables(self) -> list[VariableDescription]:
+        """List the kernel global variables.
+
+        Returns:
+            The list of global variables.
+        Raises:
+            ValueError: If the kernel programming language is not supported
+            RuntimeError: If the kernel introspection failed
+        """
+        kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
+        if kernel_language not in SNIPPETS_REGISTRY.available_languages:
+            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
+You can set them yourself using:
+
+    from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
+    SNIPPETS_REGISTRY.register(
+        "my-language",
+        LanguageSnippets(
+            list_variables="",
+            get_variable="",
+            set_variable="",
+            get_variable_mimetypes="",
+        )
+    )
+""")
+
+        snippet = SNIPPETS_REGISTRY.get_list_variables(kernel_language)
+        results = self.execute(snippet, silent=True)
+
+        self.log.debug("Kernel variables: %s", results)
+
+        if (
+            results["status"] == "ok"
+            and results["outputs"]
+            and "application/json" in results["outputs"][-1]["data"]
+        ):
+            return sorted(
+                (
+                    VariableDescription(**v)
+                    for v in results["outputs"][-1]["data"]["application/json"]
+                ),
+                key=lambda v: v["name"],
+            )
+        else:
+            raise RuntimeError("Failed to list variables.")
+
+    def get_variable_mimetypes(
         self, name: str, mimetype: str | None = None
     ) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
-        """Get a kernel variable.
+        """Get a kernel variable mimetype.
 
         Args:
             name: Variable name
@@ -448,7 +594,7 @@ You can set them yourself using:
     SNIPPETS_REGISTRY.register("my-language", LanguageSnippets(list_variables="", get_variable=""))
 """)
 
-        snippet = SNIPPETS_REGISTRY.get_get_variable(kernel_language)
+        snippet = SNIPPETS_REGISTRY.get_get_variable_mimetypes(kernel_language)
         results = self.execute(snippet.format(name=name, mimetype=mimetype), silent=True)
 
         self.log.debug("Kernel variables: %s", results)
@@ -470,41 +616,3 @@ You can set them yourself using:
                 )
         else:
             raise RuntimeError(f"Failed to get variable {name} with type {mimetype}.")
-
-    def list_variables(self) -> list[VariableDescription]:
-        """List the kernel global variables.
-
-        Returns:
-            The list of global variables.
-        Raises:
-            ValueError: If the kernel programming language is not supported
-            RuntimeError: If the kernel introspection failed
-        """
-        kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
-        if kernel_language not in SNIPPETS_REGISTRY.available_languages:
-            raise ValueError(f"""Code snippet for language {kernel_language} are not available.
-You can set them yourself using:
-
-    from jupyter_kernel_client import SNIPPETS_REGISTRY, LanguageSnippets
-    SNIPPETS_REGISTRY.register("my-language", LanguageSnippets(list_variables="", get_variable=""))
-""")
-
-        snippet = SNIPPETS_REGISTRY.get_list_variables(kernel_language)
-        results = self.execute(snippet, silent=True)
-
-        self.log.debug("Kernel variables: %s", results)
-
-        if (
-            results["status"] == "ok"
-            and results["outputs"]
-            and "application/json" in results["outputs"][-1]["data"]
-        ):
-            return sorted(
-                (
-                    VariableDescription(**v)
-                    for v in results["outputs"][-1]["data"]["application/json"]
-                ),
-                key=lambda v: v["name"],
-            )
-        else:
-            raise RuntimeError("Failed to list variables.")
