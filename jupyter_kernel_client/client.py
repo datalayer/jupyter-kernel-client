@@ -516,7 +516,10 @@ You can set them yourself using:
         if results["status"] == "ok" and results["outputs"]:
             data = results["outputs"][0]["data"]
             metadata = results["outputs"][0].get("metadata", {})
-            return deserialize_object(data, metadata)
+            try:
+                return deserialize_object(data, metadata)
+            except Exception as e:
+                raise RuntimeError(f"No valid deserialization data found: {e}")
         else:
             raise RuntimeError(f"Failed to get variable {name}.")
 
