@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 import re
 import typing as t
@@ -35,14 +36,17 @@ def fetch(
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": "Jupyter kernels CLI",
+            "X-Colab-Client-Agent": "colab-mcp",
         }
     if token:
         headers["Authorization"] = f"Bearer {token}"
+        # headers["X-Colab-Runtime-Proxy-Token"] = token
     if "timeout" not in kwargs:
         kwargs["timeout"] = REQUEST_TIMEOUT
+    logging.debug(f"REQUEST: {request}, HEADERS: {headers}, ARGS: {kwargs}")
     response = f(request, headers=headers, **kwargs)
     response.raise_for_status()
+    logging.debug(f"RESPONSE: {response}")
     return response
 
 
@@ -66,10 +70,11 @@ class KernelHttpManager(LoggingConfigurable):
     def __init__(
         self,
         server_url: str,
-        token: str,
+        token: str | None,
         username: str = os.environ.get("USER", "username"),
         kernel_id: str | None = None,
         client_kwargs: dict[str, t.Any] | None = None,
+        headers: dict[str, t.Any] | None = None,
         **kwargs,
     ):
         """Initialize the kernel manager."""
@@ -80,6 +85,7 @@ class KernelHttpManager(LoggingConfigurable):
         self.__kernel: dict | None = None
         self.__client: t.Any | None = None
         self.__client_kwargs = client_kwargs
+        self.__extra_headers = headers
 
         if kernel_id:
             self.__kernel = {
@@ -114,7 +120,7 @@ class KernelHttpManager(LoggingConfigurable):
     def _client_factory_default(self) -> Type:
         return import_item(self.client_class)
 
-    @observe("client_class")
+    @observe("lient_class")
     def _client_class_changed(self, change: dict[str, DottedObjectName]) -> None:
         self.client_factory = import_item(str(change["new"]))
 
@@ -162,7 +168,7 @@ class KernelHttpManager(LoggingConfigurable):
 
         self.log.debug("Request kernel at: %s", self.kernel_url)
         try:
-            response = fetch(self.kernel_url, token=self.token, method="GET", timeout=timeout)
+            response = fetch(self.kernel_url, token=self.token, method="GET", timeout=timeout, headers=self.__extra_headers)
         except HTTPError as error:
             if error.response.status_code == 404:
                 self.log.warning("Kernel not found at: %s", self.kernel_url)
@@ -210,6 +216,7 @@ class KernelHttpManager(LoggingConfigurable):
             method="POST",
             json={"name": name, "path": path},
             timeout=timeout,
+            headers=self.__extra_headers
         )
 
         self.__kernel = response.json()
@@ -239,7 +246,7 @@ class KernelHttpManager(LoggingConfigurable):
 
         # If not now and refreshing the model still returns it, try the http way
         try:
-            response = fetch(self.kernel_url, token=self.token, method="DELETE", timeout=timeout)
+            response = fetch(self.kernel_url, token=self.token, method="DELETE", timeout=timeout, headers=self.__extra_headers)
             self.log.debug(
                 "Shutdown kernel response: %d %s",
                 response.status_code,
@@ -263,7 +270,7 @@ class KernelHttpManager(LoggingConfigurable):
 
         kernel_url = self.kernel_url + "/restart"
         self.log.debug("Request restart kernel at: %s", kernel_url)
-        response = fetch(kernel_url, token=self.token, method="POST", timeout=timeout)
+        response = fetch(kernel_url, token=self.token, method="POST", timeout=timeout, headers=self.__extra_headers)
         self.log.debug("Restart kernel response: %d %s", response.status_code, response.reason)
 
     def interrupt_kernel(self, timeout: float = REQUEST_TIMEOUT):
@@ -278,6 +285,7 @@ class KernelHttpManager(LoggingConfigurable):
             token=self.token,
             method="POST",
             timeout=timeout,
+            headers=self.__extra_headers
         )
         self.log.debug(
             "Interrupt kernel response: %d %s",

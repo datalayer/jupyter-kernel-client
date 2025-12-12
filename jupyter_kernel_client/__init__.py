@@ -11,6 +11,7 @@ from jupyter_kernel_client.manager import KernelHttpManager
 from jupyter_kernel_client.models import VariableDescription
 from jupyter_kernel_client.snippets import SNIPPETS_REGISTRY, LanguageSnippets
 from jupyter_kernel_client.wsclient import KernelWebSocketClient
+from jupyter_kernel_client.wsclient import JupyterSubprotocol
 
 __all__ = [
     "SNIPPETS_REGISTRY",
@@ -20,5 +21,6 @@ __all__ = [
     "KonsoleApp",
     "LanguageSnippets",
     "VariableDescription",
+    "JupyterSubprotocol",
     "__version__",
 ]
