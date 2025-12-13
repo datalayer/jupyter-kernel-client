@@ -31,13 +31,11 @@ def fetch(
     """Fetch a network resource as a context manager."""
     method = kwargs.pop("method", "GET")
     f = getattr(requests, method.lower())
-    headers = kwargs.pop("headers", {})
-    if len(headers) == 0:
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-Colab-Client-Agent": "colab-mcp",
-        }
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    headers.update(kwargs.pop("headers", {}))
     if token:
         headers["Authorization"] = f"Bearer {token}"
         # headers["X-Colab-Runtime-Proxy-Token"] = token
