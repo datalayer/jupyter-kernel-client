@@ -118,7 +118,7 @@ class KernelHttpManager(LoggingConfigurable):
     def _client_factory_default(self) -> Type:
         return import_item(self.client_class)
 
-    @observe("lient_class")
+    @observe("client_class")
     def _client_class_changed(self, change: dict[str, DottedObjectName]) -> None:
         self.client_factory = import_item(str(change["new"]))
 
