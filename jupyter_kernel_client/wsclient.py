@@ -484,7 +484,6 @@ class KernelWebSocketClient(KernelClientABC):
         ping_interval: float = 60,
         reconnect_interval: int = 0,
         subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
-        extra_params: dict[str, t.Any] | None = None,
         **kwargs,
     ):
         """Initialize the kernel client."""
@@ -520,7 +519,7 @@ class KernelWebSocketClient(KernelClientABC):
         self._interactive_lock = Lock()
 
         self._subprotocol = subprotocol
-        self._extra_params = extra_params
+        self._headers = kwargs.pop("headers", {})
 
     def __del__(self):
         self.stop_channels()
@@ -566,14 +565,14 @@ class KernelWebSocketClient(KernelClientABC):
         params = {"session_id": self.session.session}
         if self.token is not None:
             params['token'] = self.token
-        params.update(self._extra_params)
         url += "?" + urlencode(params)
         subprotocols = []
         if self._subprotocol == JupyterSubprotocol.V1:
             subprotocols = ["v1.kernel.websocket.jupyter.org"]
+
         self.kernel_socket = websocket.WebSocketApp(
             url,
-            header=["User-Agent: colab-mcp"],
+            header=self._headers,
             subprotocols=subprotocols,
             on_close=self._on_close,
             on_open=self._on_open,

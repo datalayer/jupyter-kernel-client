@@ -83,7 +83,14 @@ class KernelHttpManager(LoggingConfigurable):
         self.__kernel: dict | None = None
         self.__client: t.Any | None = None
         self.__client_kwargs = client_kwargs
-        self.__extra_headers = headers
+        if headers:
+            self.__extra_headers = headers
+        else:
+            self.__extra_headers = {}
+
+        if 'headers' not in self.__client_kwargs:
+            self.__client_kwargs['headers'] = {}
+        self.__client_kwargs['headers'].update(self.__extra_headers)
 
         if kernel_id:
             self.__kernel = {
