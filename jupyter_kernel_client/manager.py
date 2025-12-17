@@ -34,11 +34,11 @@ def fetch(
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
+        "User-Agent": "Jupyter Kernel Client"
     }
     headers.update(kwargs.pop("headers", {}))
     if token:
         headers["Authorization"] = f"Bearer {token}"
-        # headers["X-Colab-Runtime-Proxy-Token"] = token
     if "timeout" not in kwargs:
         kwargs["timeout"] = REQUEST_TIMEOUT
     logging.debug(f"REQUEST: {request}, HEADERS: {headers}, ARGS: {kwargs}")
