@@ -31,7 +31,7 @@ from jupyter_client.session import Message, Session
 
 from jupyter_kernel_client.constants import REQUEST_TIMEOUT
 from jupyter_kernel_client.log import get_logger
-from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1
+from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1, deserialize_msg_from_ws_json, serialize_msg_to_ws_json
 
 
 class JupyterSubprotocol(Enum):
@@ -46,6 +46,9 @@ class JupyterSubprotocol(Enum):
     # Use the v1.kernel.websocket.jupyter.org protocol
     # https://jupyter-server.readthedocs.io/en/latest/developers/websocket-protocols.html#v1-kernel-websocket-jupyter-org-protocol
     V1 = 1
+
+    # JSON is specifically for Colab (until we modify this library to actually have support for DEFAULT)
+    JSON = 2
 
 
 class WSSession(Session):
@@ -249,10 +252,13 @@ class WSSession(Session):
         to_send = self.serialize(msg)
         to_send.extend(buffers)
 
-        if self.subprotocol == JupyterSubprotocol.V1:
+        if self.subprotocol == JupyterSubprotocol.JSON:
+            stream.send_text(serialize_msg_to_ws_json(msg))
+        elif self.subprotocol == JupyterSubprotoco.V1:
             stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
         else:
-            stream.send_text(json.dumps(msg, default=str))
+            # V0 / DEFAULT is currently unsupported
+            raise ValueError("JupyterSubprotocol.DEFAULT is currently unsupported.")
 
         self.log.debug("WSSession.send\n%s\n%s\n%s", msg, to_send, buffers)
 
@@ -1239,12 +1245,14 @@ class KernelWebSocketClient(KernelClientABC):
         self.connection_ready.clear()
 
     def _on_message(self, s: websocket.WebSocket, message: bytes) -> None:
-        if self._subprotocol == JupyterSubprotocol.V1:
+        if self._subprotocol == JupyterSubprotocol.JSON:
+            deserialize_msg = deserialize_msg_from_ws_json(message)
+            channel = deserialize_msg['channel']
+        elif self._subprotocol == JupyterSubprotocol.V1:
             channel, msg_list = deserialize_msg_from_ws_v1(message)
             deserialize_msg = self.session.deserialize(msg_list)
         else:
-            deserialize_msg = json.loads(message.encode('utf-8'))
-            channel = deserialize_msg['channel']
+            raise ValueError("JupyterSubprotocol.DEFAULT is unsupported.")
 
         self.log.debug(
             "Received message on channel: {channel}, msg_id: {msg_id}, msg_type: {msg_type}".format(

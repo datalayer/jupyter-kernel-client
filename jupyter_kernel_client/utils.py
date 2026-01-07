@@ -14,6 +14,8 @@ Code source:
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone, tzinfo
+import json
+import logging
 from typing import Any
 
 
@@ -50,6 +52,15 @@ def deserialize_msg_from_ws_v1(ws_msg):
     msg_list = [ws_msg[offsets[i] : offsets[i + 1]] for i in range(1, offset_number - 1)]
     return channel, msg_list
 
+
+def serialize_msg_to_ws_json(msg):
+    """Serialize as JSON (for Colab)."""
+    return json.dumps(msg, default=str)
+
+
+def deserialize_msg_from_ws_json(ws_msg):
+    """Deserialize as JSON (for Colab)."""
+    return json.loads(ws_msg.encode('utf-8'))
 
 def url_path_join(*pieces: str) -> str:
     """Join components of url into a relative url
