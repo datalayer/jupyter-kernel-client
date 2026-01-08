@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+
+import json
 import logging
 import os
 import queue
@@ -13,6 +15,7 @@ import signal
 import sys
 import time
 import typing as t
+from enum import Enum
 from getpass import getpass
 from threading import Event, Lock, Thread
 from urllib.parse import urlencode
@@ -28,17 +31,39 @@ from jupyter_client.session import Message, Session
 
 from jupyter_kernel_client.constants import REQUEST_TIMEOUT
 from jupyter_kernel_client.log import get_logger
-from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1
+from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1, deserialize_msg_from_ws_json, serialize_msg_to_ws_json
+
+
+class JupyterSubprotocol(Enum):
+    """JupyterSubprotocol specifies which subprotocol the KernelWebSocketClient should specifically
+    request when interacting with the Jupyter server.
+    """
+
+    # Use the default subprotocol
+    # https://jupyter-server.readthedocs.io/en/latest/developers/websocket-protocols.html#default-websocket-protocol
+    DEFAULT = 0
+
+    # Use the v1.kernel.websocket.jupyter.org protocol
+    # https://jupyter-server.readthedocs.io/en/latest/developers/websocket-protocols.html#v1-kernel-websocket-jupyter-org-protocol
+    V1 = 1
+
+    # JSON is specifically for Colab (until we modify this library to actually have support for DEFAULT)
+    JSON = 2
 
 
 class WSSession(Session):
     """WebSocket session."""
 
-    def __init__(self, log: logging.Logger | None = None, **kwargs):
+    def __init__(self,
+                 log: logging.Logger | None = None,
+                 subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
+                 **kwargs):
         super().__init__(**kwargs)
         self.log = log or get_logger()
         if not self.debug:
             self.debug = self.log.level == logging.DEBUG
+        self.subprotocol = subprotocol
+
 
     def serialize(self, msg: dict[str, t.Any], **kwargs) -> list[bytes]:  # type:ignore[override,no-untyped-def]
         """Serialize the message components to bytes.
@@ -201,6 +226,8 @@ class WSSession(Session):
                 header=header,
                 metadata=metadata,
             )
+        msg['channel'] = channel
+
         if self.check_pid and os.getpid() != self.pid:
             get_logger().warning("Attempted to send message from fork\n%s", msg)
             return None
@@ -225,7 +252,13 @@ class WSSession(Session):
         to_send = self.serialize(msg)
         to_send.extend(buffers)
 
-        stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
+        if self.subprotocol == JupyterSubprotocol.JSON:
+            stream.send_text(serialize_msg_to_ws_json(msg))
+        elif self.subprotocol == JupyterSubprotocol.V1:
+            stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
+        else:
+            # V0 / DEFAULT is currently unsupported
+            raise ValueError("JupyterSubprotocol.DEFAULT is currently unsupported.")
 
         self.log.debug("WSSession.send\n%s\n%s\n%s", msg, to_send, buffers)
 
@@ -436,9 +469,15 @@ class KernelWebSocketClient(KernelClientABC):
     reconnect_interval: float
         Amount of time to wait before trying to reconnect the websocket;
         default 0 means no reconnection.
+    subprotocol: JupyterSubprotocol | None
+        The enum value of the subprotocol to use for communication.
+    token_param: String | None
+        The name of the token parameter to use.
     """
 
     DEFAULT_INTERRUPT_WAIT = 1
+
+    
 
     def __init__(  # type:ignore[no-untyped-def]
         self,
@@ -450,6 +489,7 @@ class KernelWebSocketClient(KernelClientABC):
         debug_session: bool = False,
         ping_interval: float = 60,
         reconnect_interval: int = 0,
+        subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
         **kwargs,
     ):
         """Initialize the kernel client."""
@@ -466,7 +506,7 @@ class KernelWebSocketClient(KernelClientABC):
         self.ping_interval: float = ping_interval
         self.reconnect_interval = reconnect_interval
         self.timeout = timeout
-        self.session = WSSession(log=self.log)
+        self.session = WSSession(log=self.log, subprotocol=subprotocol)
         self.session.username = username or ""
         self.session.debug = debug_session
 
@@ -483,6 +523,9 @@ class KernelWebSocketClient(KernelClientABC):
         self._control_msg_queue: queue.Queue[dict] = queue.Queue()
 
         self._interactive_lock = Lock()
+
+        self._subprotocol = subprotocol
+        self._headers = kwargs.pop("headers", {})
 
     def __del__(self):
         self.stop_channels()
@@ -527,13 +570,16 @@ class KernelWebSocketClient(KernelClientABC):
         url = self.kernel_ws_endpoint
         params = {"session_id": self.session.session}
         if self.token is not None:
-            params["token"] = self.token
+            params['token'] = self.token
         url += "?" + urlencode(params)
+        subprotocols = []
+        if self._subprotocol == JupyterSubprotocol.V1:
+            subprotocols = ["v1.kernel.websocket.jupyter.org"]
+
         self.kernel_socket = websocket.WebSocketApp(
             url,
-            header=["User-Agent: Jupyter Kernel Client"],
-            # Use the new optimized protocol
-            subprotocols=["v1.kernel.websocket.jupyter.org"],
+            header=self._headers,
+            subprotocols=subprotocols,
             on_close=self._on_close,
             on_open=self._on_open,
             on_message=self._on_message,
@@ -1198,9 +1244,16 @@ class KernelWebSocketClient(KernelClientABC):
             self.log.debug(msg)
         self.connection_ready.clear()
 
-    def _on_message(self, _: websocket.WebSocket, message: bytes) -> None:
-        channel, msg_list = deserialize_msg_from_ws_v1(message)
-        deserialize_msg = self.session.deserialize(msg_list)
+    def _on_message(self, s: websocket.WebSocket, message: bytes) -> None:
+        if self._subprotocol == JupyterSubprotocol.JSON:
+            deserialize_msg = deserialize_msg_from_ws_json(message)
+            channel = deserialize_msg['channel']
+        elif self._subprotocol == JupyterSubprotocol.V1:
+            channel, msg_list = deserialize_msg_from_ws_v1(message)
+            deserialize_msg = self.session.deserialize(msg_list)
+        else:
+            raise ValueError("JupyterSubprotocol.DEFAULT is unsupported.")
+
         self.log.debug(
             "Received message on channel: {channel}, msg_id: {msg_id}, msg_type: {msg_type}".format(
                 channel=channel,
@@ -1216,6 +1269,7 @@ class KernelWebSocketClient(KernelClientABC):
             self.log.error("No websocket defined.")
             return
         try:
+            self.log.debug(f"kernel socket: {self.kernel_socket.url}")
             self.kernel_socket.run_forever(
                 ping_interval=self.ping_interval, reconnect=self.reconnect_interval
             )

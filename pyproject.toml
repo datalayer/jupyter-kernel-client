@@ -125,3 +125,21 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # S101 Use of `assert` detected
 "jupyter_kernel_client/tests/*" = ["S101"]
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+
+[dependency-groups]
+dev = [
+    {include-group = "test"}
+]
+test = [
+    "ipykernel>=6.31.0",
+    "jupyter-server>=2.17.0",
+    "numpy>=2.0.2",
+    "pandas>=2.3.3",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
+    "pytest-timeout>=2.4.0",
+]

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 import re
 import typing as t
@@ -30,13 +31,12 @@ def fetch(
     """Fetch a network resource as a context manager."""
     method = kwargs.pop("method", "GET")
     f = getattr(requests, method.lower())
-    headers = kwargs.pop("headers", {})
-    if len(headers) == 0:
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "User-Agent": "Jupyter kernels CLI",
-        }
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Jupyter Kernel Client"
+    }
+    headers.update(kwargs.pop("headers", {}))
     if token:
         headers["Authorization"] = f"Bearer {token}"
     if "timeout" not in kwargs:
@@ -66,10 +66,11 @@ class KernelHttpManager(LoggingConfigurable):
     def __init__(
         self,
         server_url: str,
-        token: str,
+        token: str | None,
         username: str = os.environ.get("USER", "username"),
         kernel_id: str | None = None,
         client_kwargs: dict[str, t.Any] | None = None,
+        headers: dict[str, t.Any] | None = None,
         **kwargs,
     ):
         """Initialize the kernel manager."""
@@ -79,7 +80,17 @@ class KernelHttpManager(LoggingConfigurable):
         self.username = username
         self.__kernel: dict | None = None
         self.__client: t.Any | None = None
+        if not client_kwargs:
+            client_kwargs = {}
         self.__client_kwargs = client_kwargs
+        if headers:
+            self.__extra_headers = headers
+        else:
+            self.__extra_headers = {}
+
+        if 'headers' not in self.__client_kwargs:
+            self.__client_kwargs['headers'] = {}
+        self.__client_kwargs['headers'].update(self.__extra_headers)
 
         if kernel_id:
             self.__kernel = {
@@ -162,7 +173,7 @@ class KernelHttpManager(LoggingConfigurable):
 
         self.log.debug("Request kernel at: %s", self.kernel_url)
         try:
-            response = fetch(self.kernel_url, token=self.token, method="GET", timeout=timeout)
+            response = fetch(self.kernel_url, token=self.token, method="GET", timeout=timeout, headers=self.__extra_headers)
         except HTTPError as error:
             if error.response.status_code == 404:
                 self.log.warning("Kernel not found at: %s", self.kernel_url)
@@ -210,6 +221,7 @@ class KernelHttpManager(LoggingConfigurable):
             method="POST",
             json={"name": name, "path": path},
             timeout=timeout,
+            headers=self.__extra_headers
         )
 
         self.__kernel = response.json()
@@ -239,7 +251,7 @@ class KernelHttpManager(LoggingConfigurable):
 
         # If not now and refreshing the model still returns it, try the http way
         try:
-            response = fetch(self.kernel_url, token=self.token, method="DELETE", timeout=timeout)
+            response = fetch(self.kernel_url, token=self.token, method="DELETE", timeout=timeout, headers=self.__extra_headers)
             self.log.debug(
                 "Shutdown kernel response: %d %s",
                 response.status_code,
@@ -263,7 +275,7 @@ class KernelHttpManager(LoggingConfigurable):
 
         kernel_url = self.kernel_url + "/restart"
         self.log.debug("Request restart kernel at: %s", kernel_url)
-        response = fetch(kernel_url, token=self.token, method="POST", timeout=timeout)
+        response = fetch(kernel_url, token=self.token, method="POST", timeout=timeout, headers=self.__extra_headers)
         self.log.debug("Restart kernel response: %d %s", response.status_code, response.reason)
 
     def interrupt_kernel(self, timeout: float = REQUEST_TIMEOUT):
@@ -278,6 +290,7 @@ class KernelHttpManager(LoggingConfigurable):
             token=self.token,
             method="POST",
             timeout=timeout,
+            headers=self.__extra_headers
         )
         self.log.debug(
             "Interrupt kernel response: %d %s",
