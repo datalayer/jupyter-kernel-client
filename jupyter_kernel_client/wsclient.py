@@ -254,7 +254,7 @@ class WSSession(Session):
 
         if self.subprotocol == JupyterSubprotocol.JSON:
             stream.send_text(serialize_msg_to_ws_json(msg))
-        elif self.subprotocol == JupyterSubprotoco.V1:
+        elif self.subprotocol == JupyterSubprotocol.V1:
             stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
         else:
             # V0 / DEFAULT is currently unsupported
@@ -1256,6 +1256,7 @@ class KernelWebSocketClient(KernelClientABC):
 
         self.log.debug(
             "Received message on channel: {channel}, msg_id: {msg_id}, msg_type: {msg_type}".format(
+                channel=channel,
                 **(deserialize_msg or {"msg_id": "null", "msg_type": "null"}),
             )
         )

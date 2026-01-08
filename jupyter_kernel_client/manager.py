@@ -41,10 +41,8 @@ def fetch(
         headers["Authorization"] = f"Bearer {token}"
     if "timeout" not in kwargs:
         kwargs["timeout"] = REQUEST_TIMEOUT
-    logging.debug(f"REQUEST: {request}, HEADERS: {headers}, ARGS: {kwargs}")
     response = f(request, headers=headers, **kwargs)
     response.raise_for_status()
-    logging.debug(f"RESPONSE: {response}")
     return response
 
 
@@ -82,6 +80,8 @@ class KernelHttpManager(LoggingConfigurable):
         self.username = username
         self.__kernel: dict | None = None
         self.__client: t.Any | None = None
+        if not client_kwargs:
+            client_kwargs = {}
         self.__client_kwargs = client_kwargs
         if headers:
             self.__extra_headers = headers
