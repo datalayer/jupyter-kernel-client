@@ -39,8 +39,6 @@ def jupyter_server(tmp_path: Path) -> t.Generator[tuple[str, str], t.Any, t.Any]
     stdout = tmp_path / "stdout.log"
     stderr = tmp_path / "stderr.log"
 
-    print(f"STDOUT: {stdout}")
-
     with stdout.open("wb") as out, stderr.open("wb") as err:
         jp_server = Popen(
             [
