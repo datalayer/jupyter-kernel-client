@@ -246,8 +246,12 @@ class KernelHttpManager(LoggingConfigurable):
                 response.reason,
             )
         except HTTPError as error:
-            if error.response.status_code == 404:
-                self.log.debug("Shutdown kernel response: kernel not found (ignored)")
+            status = error.response.status_code
+            if status in {404, 410, 502, 503}:
+                self.log.debug(
+                    "Shutdown kernel response: %s (ignored)",
+                    status,
+                )
             else:
                 raise
         except BaseException as e:
