@@ -228,6 +228,10 @@ class KernelClient(LoggingConfigurable):
             else None
         )
 
+    def list_kernels(self) -> list[dict[str, t.Any]]:
+        """List the running kernels."""
+        return self._manager.list_kernels()
+
     @property
     def username(self) -> str:
         """Client owner username."""

@@ -190,6 +190,26 @@ class KernelHttpManager(LoggingConfigurable):
             self.__client = None
         return model
 
+    def list_kernels(self, timeout: float = REQUEST_TIMEOUT) -> list[dict[str, t.Any]]:
+        """List the running kernels.
+
+        Returns
+        -------
+            The list of running kernels.
+        """
+        kernels_url = url_path_join(self.server_url, "api/kernels")
+        self.log.debug("Request kernels at: %s", kernels_url)
+        try:
+            response = fetch(kernels_url, token=self.token, method="GET", timeout=timeout, headers=self.__extra_headers)
+        except HTTPError as error:
+            self.log.error("Error fetching kernels: %s", error)
+            return []
+        else:
+            models = response.json()
+        self.log.debug("Kernels retrieved: %s", models)
+        return models
+
+
     # --------------------------------------------------------------------------
     # Kernel management
     # --------------------------------------------------------------------------
