@@ -31,7 +31,7 @@ from jupyter_client.session import Message, Session
 
 from jupyter_kernel_client.constants import REQUEST_TIMEOUT
 from jupyter_kernel_client.log import get_logger
-from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1, deserialize_msg_from_ws_json, serialize_msg_to_ws_json
+from jupyter_kernel_client.utils import deserialize_msg_from_ws_v1, serialize_msg_to_ws_v1, deserialize_msg_from_ws_default, serialize_msg_to_ws_json, serialize_msg_to_ws_default
 
 
 class JupyterSubprotocol(Enum):
@@ -46,9 +46,6 @@ class JupyterSubprotocol(Enum):
     # Use the v1.kernel.websocket.jupyter.org protocol
     # https://jupyter-server.readthedocs.io/en/latest/developers/websocket-protocols.html#v1-kernel-websocket-jupyter-org-protocol
     V1 = 1
-
-    # JSON is specifically for Colab (until we modify this library to actually have support for DEFAULT)
-    JSON = 2
 
 
 class WSSession(Session):
@@ -252,13 +249,22 @@ class WSSession(Session):
         to_send = self.serialize(msg)
         to_send.extend(buffers)
 
-        if self.subprotocol == JupyterSubprotocol.JSON:
-            stream.send_text(serialize_msg_to_ws_json(msg))
-        elif self.subprotocol == JupyterSubprotocol.V1:
+        if self.subprotocol == JupyterSubprotocol.V1:
             stream.send_bytes(serialize_msg_to_ws_v1(to_send, channel))
         else:
-            # V0 / DEFAULT is currently unsupported
-            raise ValueError("JupyterSubprotocol.DEFAULT is currently unsupported.")
+            # The Default protocol is a bytearray with a header pointing to 
+            # offsets where buffers are appended.
+            #
+            # Buffers are namely added for cases such as comm messages.
+            # In the case of the common message without a buffers list, the
+            # headers will always be '\x00\x00\x00\x01\x00\x00\x00\x08'.
+            # Since this is constant it might as well not be included, which is 
+            # what Jupyter is doing with the default protocol.
+            # [server code found here](https://github.com/jupyter-server/jupyter_server/blob/main/jupyter_server/services/kernels/connection/channels.py#L445-L464)
+            if 'buffers' in msg and len(msg['buffers']) > 0:
+                stream.send_bytes(serialize_msg_to_ws_default(msg))
+            else:
+                stream.send_text(serialize_msg_to_ws_json(msg))
 
         self.log.debug("WSSession.send\n%s\n%s\n%s", msg, to_send, buffers)
 
@@ -1245,18 +1251,18 @@ class KernelWebSocketClient(KernelClientABC):
         self.connection_ready.clear()
 
     def _on_message(self, s: websocket.WebSocket, message: bytes) -> None:
-        if self._subprotocol == JupyterSubprotocol.JSON:
-            deserialize_msg = deserialize_msg_from_ws_json(message)
+        if self._subprotocol == JupyterSubprotocol.DEFAULT:
+            deserialize_msg = deserialize_msg_from_ws_default(message)
             channel = deserialize_msg['channel']
         elif self._subprotocol == JupyterSubprotocol.V1:
             channel, msg_list = deserialize_msg_from_ws_v1(message)
             deserialize_msg = self.session.deserialize(msg_list)
         else:
-            raise ValueError("JupyterSubprotocol.DEFAULT is unsupported.")
+            raise ValueError("unsupported protocol.")
 
         self.log.debug(
             "Received message on channel: {channel}, msg_id: {msg_id}, msg_type: {msg_type}".format(
-                channel=channel,
+                channel,
                 **(deserialize_msg or {"msg_id": "null", "msg_type": "null"}),
             )
         )

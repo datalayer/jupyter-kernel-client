@@ -53,14 +53,80 @@ def deserialize_msg_from_ws_v1(ws_msg):
     return channel, msg_list
 
 
+def serialize_msg_to_ws_default(msg):
+    """Serialize a message using the default protocol."""
+    offsets = []
+    buffers = []
+
+    msg_copy = dict(msg)
+    msg_copy['header']['date'] = str(msg_copy['header']['date'])
+    orig_buffers = msg_copy.pop("buffers", [])
+    json_bytes = json.dumps(msg_copy).encode("utf-8")
+    buffers.append(json_bytes)
+
+    for b in orig_buffers:
+        buffers.append(b)
+
+    nbufs = len(buffers)
+    offsets.append(4 * (nbufs + 1))
+
+    for i in range(0, nbufs - 1):
+        offsets.append(offsets[-1] + len(buffers[i]))
+
+    total_size = offsets[-1] + len(buffers[-1])
+    msg_buf = bytearray(total_size)
+
+    msg_buf[0:4] = nbufs.to_bytes(4, byteorder="big")
+
+    for i, off in enumerate(offsets):
+        start = 4 * (i + 1)
+        msg_buf[start:start+4] = off.to_bytes(4, byteorder="big")
+
+    for i, b in enumerate(buffers):
+        start = offsets[i]
+        msg_buf[start:start+len(b)] = b
+
+    return bytes(msg_buf)
+
+
+def deserialize_msg_from_ws_default(ws_msg):
+    """Deserialize a message using the default protocol."""
+    if isinstance(ws_msg, str):
+        return json.loads(ws_msg.encode('utf-8'))
+    else:
+        nbufs = int.from_bytes(ws_msg[:4], byteorder="big")
+        offsets = []
+        if nbufs < 2:
+            raise ValueError("unsupported number of buffers")
+
+        for i in range(nbufs):
+            start = 4 * (i + 1)
+            off = int.from_bytes(ws_msg[start:start+4], byteorder="big")
+            offsets.append(off)
+
+        json_start = offsets[0]
+        json_stop = offsets[1]
+
+        if not (0 <= json_start <= json_stop <= len(ws_msg)):
+            raise ValueError("Invalid JSON offsets")
+
+        json_bytes = ws_msg[json_start:json_stop]
+        msg = json.loads(json_bytes.decode("utf-8"))
+        msg["buffers"] = []
+        for i in range(1, nbufs):
+            start = offsets[i]
+            stop = offsets[i+1] if (i+1) < len(offsets) else len(ws_msg)
+
+            if not (0 <= start <= stop <= len(ws_msg)):
+                raise ValueError(f"Invalid buffer offsets for chunk {i}")
+
+            msg["buffers"].append(ws_msg[start:stop])
+
+        return msg
+
 def serialize_msg_to_ws_json(msg):
-    """Serialize as JSON (for Colab)."""
+    """Serialize a default protocol with no buffers."""
     return json.dumps(msg, default=str)
-
-
-def deserialize_msg_from_ws_json(ws_msg):
-    """Deserialize as JSON (for Colab)."""
-    return json.loads(ws_msg.encode('utf-8'))
 
 def url_path_join(*pieces: str) -> str:
     """Join components of url into a relative url
