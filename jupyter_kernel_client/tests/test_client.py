@@ -61,6 +61,31 @@ print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
     assert reply["status"] == "ok"
 
 
+def test_list_kernels_client(jupyter_server):
+    port, token = jupyter_server
+
+    # Start a kernel to ensure the list is not empty
+    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+        kernel_id = kernel.id
+
+        # Use a new client to list the kernels
+        listing_client = KernelClient(server_url=f"http://localhost:{port}", token=token)
+        kernels = listing_client.list_kernels()
+
+        assert isinstance(kernels, list)
+        assert len(kernels) > 0
+
+        # Check that the kernel we started is in the list
+        found = False
+        for k in kernels:
+            assert "id" in k
+            assert "name" in k
+            if k["id"] == kernel_id:
+                found = True
+
+        assert found, f"Kernel with id {kernel_id} not found in the list of running kernels."
+
+
 def test_list_variables(jupyter_server):
     port, token = jupyter_server
 
@@ -212,15 +237,18 @@ def test_set_variables(jupyter_server, variable, set_variable, expected):
 async def test_multi_execution_in_event_loop(jupyter_server):
     port, token = jupyter_server
 
+    current_user = os.environ.get('USER', 'John Smith')
+    current_node = node()
+
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         all = await asyncio.gather(
             asyncio.to_thread(
                 kernel.execute,
-                """import os
+                f"""import os
 from platform import node
 import time
 time.sleep(5)
-print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
+print(f"Hey {{os.environ.get('USER', 'John Smith')}} from {{node()}}.")
 """
             ),
             asyncio.to_thread(
@@ -236,7 +264,7 @@ print("Hello")"""
             {
                 "output_type": "stream",
                 "name": "stdout",
-                "text": f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.\n",
+                "text": f"Hey {current_user} from {current_node}.\n",
             }
         ]
         assert all[0]["status"] == "ok"

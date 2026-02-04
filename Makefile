@@ -28,6 +28,9 @@ build:
 clean: ## clean
 	git clean -fdx
 
+test: ## run tests
+	uv run pytest
+
 jupyter-server: ## jupyter-server
 	jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
 

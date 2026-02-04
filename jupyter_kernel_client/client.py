@@ -172,9 +172,7 @@ class KernelClient(LoggingConfigurable):
         try:
             self.stop()
         except BaseException as e:
-            self.log.error(
-                "Failed to stop the kernel client for %s.", self._manager.kernel_url, exc_info=e
-            )
+            self.log.error("Failed to stop the kernel client", exc_info=e)
 
     def _set_variables(self, variables: dict[str, t.Any] | None) -> None:
         """Set variables in the kernel's globals dictionary.
@@ -229,6 +227,10 @@ class KernelClient(LoggingConfigurable):
             if self._manager.kernel
             else None
         )
+
+    def list_kernels(self) -> list[dict[str, t.Any]]:
+        """List the running kernels."""
+        return self._manager.list_kernels()
 
     @property
     def username(self) -> str:
@@ -429,7 +431,7 @@ class KernelClient(LoggingConfigurable):
             timeout: Request timeout in seconds
         """
         self.log.info("Stopping the kernel client…")
-        if self._manager.has_kernel:
+        if self._manager and self._manager.has_kernel:
             self._manager.client.stop_channels()
             shutdown = self._own_kernel if shutdown_kernel is None else shutdown_kernel
             if shutdown:
