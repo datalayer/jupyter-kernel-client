@@ -53,7 +53,7 @@ class WSSession(Session):
 
     def __init__(self,
                  log: logging.Logger | None = None,
-                 subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
+                 subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.DEFAULT,
                  **kwargs):
         super().__init__(**kwargs)
         self.log = log or get_logger()
@@ -495,7 +495,7 @@ class KernelWebSocketClient(KernelClientABC):
         debug_session: bool = False,
         ping_interval: float = 60,
         reconnect_interval: int = 0,
-        subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.V1,
+        subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.DEFAULT,
         **kwargs,
     ):
         """Initialize the kernel client."""
