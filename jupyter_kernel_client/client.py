@@ -451,7 +451,8 @@ class KernelClient(LoggingConfigurable):
             value: Variable value to set
 
         Raises:
-            ValueError: If the kernel programming language is not supported
+            ValueError: If the kernel programming language is not supported or
+                if the value cannot be serialized (e.g., contains asyncio objects)
             RuntimeError: If the kernel introspection failed
         """
         kernel_language = (self.kernel_info or {}).get("language_info", {}).get("name")
@@ -471,7 +472,14 @@ You can set them yourself using:
     )
 """)
         snippet = SNIPPETS_REGISTRY.get_set_variable(kernel_language)
-        data, metadata = serialize_object(value)
+        try:
+            data, metadata = serialize_object(value)
+        except ValueError as e:
+            raise ValueError(
+                f"Cannot serialize variable '{name}': {e}. "
+                f"Objects containing asyncio Futures, threads, or other non-picklable "
+                f"types cannot be transferred to the kernel."
+            ) from e
         results = self.execute(snippet.format(name=name, data=data, metadata=metadata), silent=True)
         self.log.debug("Set variables: %s", results)
         if results["status"] == "ok":
