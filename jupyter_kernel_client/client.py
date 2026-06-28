@@ -307,7 +307,7 @@ class KernelClient(LoggingConfigurable):
         return {
             "execution_count": reply_content.get("execution_count"),
             "outputs": outputs,
-            "status": reply_content["status"],
+            "status": reply_content.get("status"),
         }
 
     def execute_interactive(
