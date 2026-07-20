@@ -1075,7 +1075,10 @@ class KernelWebSocketClient(KernelClientABC):
                 if timeout is not None:
                     timeout = max(0, deadline - time.monotonic())
 
-                if not self._message_received.wait(timeout=timeout):
+                if not self._message_received.wait(timeout=timeout) and not (
+                    self.iopub_channel.msg_ready()
+                    or (allow_stdin and self.stdin_channel.msg_ready())
+                ):
                     raise TimeoutError("Timeout waiting for output")
 
                 if allow_stdin:
@@ -1089,10 +1092,13 @@ class KernelWebSocketClient(KernelClientABC):
                 try:
                     msg = self.iopub_channel.get_msg(timeout=0)
                 except (queue.Empty, TimeoutError):
-                    if not self.iopub_channel.msg_ready() and (
-                        not allow_stdin or not self.stdin_channel.msg_ready()
+                    # Clear before checking the queues so a message arriving
+                    # between get_msg() and clear() cannot lose its wake-up.
+                    self._message_received.clear()
+                    if self.iopub_channel.msg_ready() or (
+                        allow_stdin and self.stdin_channel.msg_ready()
                     ):
-                        self._message_received.clear()
+                        self._message_received.set()
                     continue
 
                 if msg["parent_header"].get("msg_id") != msg_id:
