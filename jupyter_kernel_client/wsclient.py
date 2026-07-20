@@ -1073,11 +1073,10 @@ class KernelWebSocketClient(KernelClientABC):
                     raise RuntimeError("Connection was lost.")
 
                 if timeout is not None:
-                    timeout = deadline - time.monotonic()
-                    if timeout <= 0:
-                        raise TimeoutError("Timed out waiting for kernel execution output")
+                    timeout = max(0, deadline - time.monotonic())
 
-                self._message_received.wait(timeout=timeout)
+                if not self._message_received.wait(timeout=timeout):
+                    raise TimeoutError("Timeout waiting for output")
 
                 if allow_stdin:
                     try:

@@ -11,7 +11,7 @@ from jupyter_kernel_client import wsclient
 from jupyter_kernel_client.wsclient import KernelWebSocketClient
 
 
-def test_execute_interactive_raises_when_output_deadline_expires(monkeypatch):
+def test_execute_interactive_raises_when_output_wait_times_out(monkeypatch):
     client = KernelWebSocketClient(endpoint="ws://example.test")
     client.connection_ready.set()
     client._iopub_channel = Mock()
@@ -19,10 +19,11 @@ def test_execute_interactive_raises_when_output_deadline_expires(monkeypatch):
     client._iopub_channel.msg_ready.return_value = False
     client._iopub_channel.get_msg.side_effect = queue.Empty
     client._message_received = Mock()
+    client._message_received.wait.return_value = False
     monkeypatch.setattr(client, "execute", Mock(return_value="message-id"))
-    monkeypatch.setattr(wsclient.time, "monotonic", Mock(side_effect=(0.0, 0.05, 0.11)))
+    monkeypatch.setattr(wsclient.time, "monotonic", Mock(side_effect=(0.0, 0.05)))
 
-    with pytest.raises(TimeoutError, match="Timed out waiting for kernel execution output"):
+    with pytest.raises(TimeoutError, match="Timeout waiting for output"):
         client.execute_interactive("pass", allow_stdin=False, timeout=0.1)
 
     client._message_received.wait.assert_called_once_with(timeout=pytest.approx(0.05))
