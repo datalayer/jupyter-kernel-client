@@ -277,6 +277,7 @@ class KernelHttpManager(LoggingConfigurable):
                 response.status_code,
                 response.reason,
             )
+            self.__kernel = None
         except HTTPError as error:
             status = error.response.status_code
             if status in {404, 410, 502, 503}:
