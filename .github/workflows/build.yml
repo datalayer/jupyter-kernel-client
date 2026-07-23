@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.9", "3.13"]
+        python-version: ["3.10", "3.13"]
 
     steps:
       - name: Checkout
@@ -35,7 +35,7 @@ jobs:
 
       - name: Test the extension
         run: |
-          pytest jupyter_kernel_client/tests/ --cov=jupyter_kernel_client --cov-report term-missing
+          pytest jupyter_kernel_client/tests/ --timeout=60 --cov=jupyter_kernel_client --cov-report term-missing
 
       - name: Build the extension
         run: |

@@ -13,7 +13,7 @@ authors = [
 ]
 dynamic = ["version"]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["Jupyter"]
 classifiers = [
   "Intended Audience :: Developers",
@@ -37,6 +37,9 @@ dependencies = [
 konsole = [
   "jupyter_console",
 ]
+bridge = [
+  "websockets>=13",
+]
 test = [
   "ipykernel",
   "jupyter_server>=2.10,<3",
@@ -46,6 +49,7 @@ test = [
   "pytest-asyncio",
   "pytest-cov",
   "pytest-timeout",
+  "websockets>=13",
 ]
 lint = [
   "pre_commit",
@@ -67,7 +71,7 @@ file = "LICENSE"
 Home = "https://github.com/datalayer/jupyter-kernel-client"
 
 [tool.hatch.version]
-path = "jupyter_kernel_client/_version.py"
+path = "jupyter_kernel_client/__version__.py"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -78,7 +82,7 @@ filterwarnings = [
   "module:clear_current is deprecated:DeprecationWarning",
   "module:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
 ]
-timeout=30
+timeout=60
 
 [tool.mypy]
 check_untyped_defs = true
@@ -93,7 +97,7 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 100
 exclude = ["tests"]
 

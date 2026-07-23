@@ -532,6 +532,10 @@ class KernelWebSocketClient(KernelClientABC):
 
         self._subprotocol = subprotocol
         self._headers = kwargs.pop("headers", {})
+        # Extra query parameters to append to the websocket URL. This is used
+        # by non-standard backends (e.g. Google Colab) that require additional
+        # authentication parameters such as ``colab-runtime-proxy-token``.
+        self._extra_params = kwargs.pop("extra_params", {}) or {}
 
     def __del__(self):
         self.stop_channels()
@@ -577,6 +581,17 @@ class KernelWebSocketClient(KernelClientABC):
         params = {"session_id": self.session.session}
         if self.token is not None:
             params['token'] = self.token
+        # Merge backend-specific extra query parameters (e.g. Colab proxy token)
+        # while preserving reserved keys managed by this client.
+        if self._extra_params:
+            for key, value in self._extra_params.items():
+                if key in {"session_id", "token"}:
+                    self.log.warning(
+                        "Ignoring extra websocket query parameter '%s' because it is reserved.",
+                        key,
+                    )
+                    continue
+                params[key] = value
         url += "?" + urlencode(params)
         subprotocols = []
         if self._subprotocol == JupyterSubprotocol.V1:

@@ -6,6 +6,16 @@
 
 # Changelog
 
+## Unreleased
+
+### Enhancements made
+
+- Added a generic, reusable **browser bridge** (`BrowserBridgeServer`,
+  `request_payload`) and Colab presets (`ColabBridge`, `ColabConnectionInfo`,
+  `request_colab_connection`) that let an authenticated browser session hand
+  runtime connection details to a local process — the same pattern used by
+  Google's `colab-mcp`. Install with `pip install jupyter-kernel-client[bridge]`.
+
 <!-- <START NEW CHANGELOG ENTRY> -->
 
 ## 0.6.0

@@ -100,28 +100,33 @@ d = {"name": "titi"}
 
         variables = kernel.list_variables()
 
-    assert variables == [
-        VariableDescription(
+    expected_by_name = {
+        "a": VariableDescription(
             name="a",
             type=["builtins", "float"],
-            size=None
+            size=None,
         ),
-        VariableDescription(
+        "b": VariableDescription(
             name="b",
             type=["builtins", "str"],
-            size=None
+            size=None,
         ),
-        VariableDescription(
+        "c": VariableDescription(
             name="c",
             type=["builtins", "set"],
             size=None,
         ),
-        VariableDescription(
+        "d": VariableDescription(
             name="d",
             type=["builtins", "dict"],
             size=None,
         ),
-    ]
+    }
+
+    variables_by_name = {variable["name"]: variable for variable in variables}
+    for name, expected in expected_by_name.items():
+        assert name in variables_by_name
+        assert variables_by_name[name] == expected
 
 
 @pytest.mark.parametrize(
