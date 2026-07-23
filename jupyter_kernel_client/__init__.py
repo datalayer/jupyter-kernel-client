@@ -10,6 +10,7 @@ from jupyter_kernel_client.konsoleapp import KonsoleApp
 from jupyter_kernel_client.manager import KernelHttpManager
 from jupyter_kernel_client.models import VariableDescription
 from jupyter_kernel_client.snippets import SNIPPETS_REGISTRY, LanguageSnippets
+from jupyter_kernel_client.utils import get_mimebundle_text
 from jupyter_kernel_client.wsclient import KernelWebSocketClient
 from jupyter_kernel_client.wsclient import JupyterSubprotocol
 
@@ -22,5 +23,6 @@ __all__ = [
     "LanguageSnippets",
     "VariableDescription",
     "JupyterSubprotocol",
+    "get_mimebundle_text",
     "__version__",
 ]
