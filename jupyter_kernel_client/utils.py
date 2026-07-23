@@ -147,6 +147,69 @@ def url_path_join(*pieces: str) -> str:
     return result
 
 
+#: MIME types that carry readable text, richest first. ``text/plain`` is the
+#: universal fallback. ``text/html`` is intentionally absent: it is markup
+#: rather than readable text, and results that emit both an ASCII ``text/plain``
+#: table and a ``text/html`` table (a pandas ``DataFrame``, for instance) should
+#: surface the plain table to a text consumer.
+RICH_TEXT_MIMETYPES = ("text/markdown", "text/latex", "application/json", "text/plain")
+
+
+def _coerce_bundle_text(value: Any) -> str:
+    """Coerce a MIME bundle text value to ``str``.
+
+    nbformat allows a multi-line text representation to be stored either as a
+    single string or as a list of strings (one per line, newlines included);
+    join the list form so the caller always gets a single string.
+    """
+    if isinstance(value, list):
+        return "".join(str(part) for part in value)
+    return str(value)
+
+
+def get_mimebundle_text(bundle: dict[str, Any] | None, default: str | None = None) -> str | None:
+    """Pick the richest readable text representation from a MIME bundle.
+
+    A cell output MIME bundle (the ``data`` dictionary of an ``execute_result``
+    or ``display_data`` output) may carry several representations of one value.
+    For ``IPython.display`` objects the ``text/plain`` key is only the bare
+    object repr (e.g. ``"<IPython.core.display.Markdown object>"``) while the
+    readable content lives in a richer key. This returns the richest readable
+    text so a text consumer (an LLM tool call, a log, a plain-text renderer)
+    never sees the repr placeholder when real text is present.
+
+    The preference order is ``text/markdown``, ``text/latex``,
+    ``application/json``, then ``text/plain`` (see :data:`RICH_TEXT_MIMETYPES`);
+    ``application/json`` is pretty-printed. ``text/html`` is deliberately not
+    consulted, so an ASCII ``text/plain`` table wins over an equivalent
+    ``text/html`` table. Callers that can render HTML or images should handle
+    those keys themselves.
+
+    Args:
+        bundle: A MIME bundle mapping media type to its representation. ``None``
+            or a bundle with no text representation yields ``default``.
+        default: Value returned when no readable text representation is present.
+
+    Returns:
+        The richest readable text, or ``default`` if the bundle has none.
+    """
+    if not bundle:
+        return default
+
+    for mimetype in RICH_TEXT_MIMETYPES:
+        if mimetype not in bundle:
+            continue
+        value = bundle[mimetype]
+        if mimetype == "application/json" and not isinstance(value, str):
+            try:
+                return json.dumps(value, indent=2, ensure_ascii=False)
+            except (TypeError, ValueError):
+                return _coerce_bundle_text(value)
+        return _coerce_bundle_text(value)
+
+    return default
+
+
 # constant for zero offset
 ZERO = timedelta(0)
 

@@ -131,3 +131,76 @@ def test_serialize_and_deserialize_msg_to_ws_v1():
     _, deserialized_msg = deserialize_msg_from_ws_v1(serialized_msg)
     assert serialized_list == deserialized_msg
 
+
+
+# --- get_mimebundle_text: richest readable text from a MIME bundle ----------
+
+from jupyter_kernel_client.utils import get_mimebundle_text
+
+
+def test_markdown_wins_over_object_repr_plain():
+    # IPython.display.Markdown emits the repr as text/plain and the source as
+    # text/markdown; the readable source must win.
+    bundle = {
+        "text/plain": "<IPython.core.display.Markdown object>",
+        "text/markdown": "# hi",
+    }
+    assert get_mimebundle_text(bundle) == "# hi"
+
+
+def test_latex_wins_over_object_repr_plain():
+    bundle = {
+        "text/plain": "<IPython.core.display.Latex object>",
+        "text/latex": "$x^2$",
+    }
+    assert get_mimebundle_text(bundle) == "$x^2$"
+
+
+def test_json_payload_pretty_printed_not_repr():
+    bundle = {
+        "text/plain": "<IPython.core.display.JSON object>",
+        "application/json": {"a": 1, "b": [2, 3]},
+    }
+    result = get_mimebundle_text(bundle)
+    assert "IPython" not in result
+    assert json.loads(result) == {"a": 1, "b": [2, 3]}
+
+
+def test_json_string_payload_returned_verbatim():
+    bundle = {"application/json": "already-a-string"}
+    assert get_mimebundle_text(bundle) == "already-a-string"
+
+
+def test_plain_only_returned_as_is():
+    assert get_mimebundle_text({"text/plain": "42"}) == "42"
+
+
+def test_text_html_does_not_override_real_text_plain():
+    # A pandas DataFrame emits an ASCII text/plain table alongside a text/html
+    # table; the plain table must win for a text consumer.
+    bundle = {"text/plain": "   a\n0  1", "text/html": "<table>...</table>"}
+    assert get_mimebundle_text(bundle) == "   a\n0  1"
+
+
+def test_html_only_bundle_has_no_text_representation():
+    # text/html is markup, not readable text: no text representation, so the
+    # caller's default is returned and it can render the HTML itself.
+    assert get_mimebundle_text({"text/html": "<b>bold</b>"}) is None
+    assert get_mimebundle_text({"text/html": "<b>bold</b>"}, default="[HTML]") == "[HTML]"
+
+
+def test_markdown_ranks_above_json_and_latex_above_json():
+    assert get_mimebundle_text({"text/markdown": "m", "application/json": {"x": 1}}) == "m"
+    assert get_mimebundle_text({"text/latex": "l", "application/json": {"x": 1}}) == "l"
+
+
+def test_multiline_list_text_is_joined():
+    # nbformat allows a multi-line representation as a list of strings.
+    bundle = {"text/markdown": ["# title\n", "body"]}
+    assert get_mimebundle_text(bundle) == "# title\nbody"
+
+
+def test_empty_or_none_bundle_returns_default():
+    assert get_mimebundle_text(None) is None
+    assert get_mimebundle_text({}) is None
+    assert get_mimebundle_text({}, default="") == ""
