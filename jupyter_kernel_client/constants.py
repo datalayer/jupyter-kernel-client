@@ -4,4 +4,4 @@
 
 import os
 
-REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
