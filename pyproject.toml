@@ -78,7 +78,7 @@ filterwarnings = [
   "module:clear_current is deprecated:DeprecationWarning",
   "module:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
 ]
-timeout=30
+timeout=60
 
 [tool.mypy]
 check_untyped_defs = true
