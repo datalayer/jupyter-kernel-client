@@ -4,8 +4,9 @@
 
 """Jupyter Kernel Client through websocket."""
 
-from jupyter_kernel_client._version import __version__
+from jupyter_kernel_client.__version__ import __version__
 from jupyter_kernel_client.client import KernelClient
+from jupyter_kernel_client.colab import ColabKernelClient
 from jupyter_kernel_client.konsoleapp import KonsoleApp
 from jupyter_kernel_client.manager import KernelHttpManager
 from jupyter_kernel_client.models import VariableDescription
@@ -15,6 +16,7 @@ from jupyter_kernel_client.wsclient import JupyterSubprotocol
 
 __all__ = [
     "SNIPPETS_REGISTRY",
+    "ColabKernelClient",
     "KernelClient",
     "KernelHttpManager",
     "KernelWebSocketClient",

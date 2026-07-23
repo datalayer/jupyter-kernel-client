@@ -105,6 +105,71 @@ reply = kernel.execute("x=1")
 print(reply)
 ```
 
+## Connect to a Google Colab Kernel
+
+Google Colab exposes a Jupyter-compatible kernel behind an authenticating proxy.
+Use `ColabKernelClient` to connect to it. You obtain the `server_url`,
+`kernel_id`, and `proxy_token` from Colab's runtime assignment API.
+
+```py
+from jupyter_kernel_client import ColabKernelClient
+
+kernel = ColabKernelClient(
+    server_url="https://8080-m-s-kkb-use1d0-13f2m3hq9t8p1-d.us-east1-0.prod.colab.dev",
+    kernel_id="c9bba548-3995-4f26-8e1a-7b8fbb10c578",
+    proxy_token="eyJhbGciOiJFUzI1NiIsImtpZCI6IlBsNm9SZyJ9....",
+)
+kernel.start()
+reply = kernel.execute("x = 1")
+print(reply)
+# Do not shut down the Colab kernel; disconnect only.
+kernel.stop(shutdown_kernel=False)
+```
+
+`ColabKernelClient` forwards the proxy token both as the
+`X-Colab-Runtime-Proxy-Token` header and the `colab-runtime-proxy-token`
+WebSocket query parameter, which the Colab proxy requires for authentication.
+
+### How to obtain the Colab connection info
+
+The three values (`server_url`, `kernel_id`, `proxy_token`) are the pieces of the
+WebSocket URL that Colab's own frontend uses to reach your assigned runtime:
+
+```
+wss://<host>/api/kernels/<kernel_id>/channels?session_id=<...>&colab-runtime-proxy-token=<proxy_token>&colab-client-agent=web
+```
+
+For example:
+
+```
+wss://8080-m-s-kkb-use1d0-13f2m3hq9t8p1-d.us-east1-0.prod.colab.dev/api/kernels/c9bba548-3995-4f26-8e1a-7b8fbb10c578/channels?session_id=eba8d9a7-...&colab-runtime-proxy-token=eyJhbGci...&colab-client-agent=web
+```
+
+They are tied to **your** Colab session and are short-lived — they change whenever
+the runtime is reassigned or reconnected, so re-fetch them after reconnecting.
+
+The easiest way to read them is through your browser's developer tools:
+
+1. Open your notebook on [colab.research.google.com](https://colab.research.google.com)
+   and **connect to a runtime** (*Runtime → Connect*, or run any cell).
+2. Open DevTools (`F12`) → **Network** tab and select the **WS** filter (or type
+   `kernels` in the filter box).
+3. Run a cell to trigger kernel traffic.
+4. Click the `.../api/kernels/<kernel_id>/channels?...` request and read off:
+   - **`server_url`** — the scheme + host *before* `/api/kernels` (change the
+     `wss://` scheme to `https://`). Colab assigns a per-session host such as
+     `https://8080-m-s-kkb-use1d0-13f2m3hq9t8p1-d.us-east1-0.prod.colab.dev`;
+     there is usually **no** `/tun/m/...` path segment.
+   - **`kernel_id`** — the UUID segment right after `/api/kernels/`.
+   - **`proxy_token`** — the `colab-runtime-proxy-token` query parameter (this is
+     the same value as the `X-Colab-Runtime-Proxy-Token` request header). Ignore
+     the `session_id` and `colab-client-agent` query parameters.
+
+> The programmatic "runtime assignment API" is the internal endpoint the Colab
+> frontend calls (authenticated with your Google session); it is not an officially
+> published public API, so the DevTools method above is the practical way to
+> obtain the values.
+
 ### Jupyter Konsole aka Console for Kernels
 
 This package can be used to open a Jupyter Console to a Jupyter Kernel 🐣.

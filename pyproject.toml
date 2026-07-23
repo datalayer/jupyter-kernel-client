@@ -67,7 +67,7 @@ file = "LICENSE"
 Home = "https://github.com/datalayer/jupyter-kernel-client"
 
 [tool.hatch.version]
-path = "jupyter_kernel_client/_version.py"
+path = "jupyter_kernel_client/__version__.py"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
