@@ -37,6 +37,9 @@ dependencies = [
 konsole = [
   "jupyter_console",
 ]
+bridge = [
+  "websockets>=13",
+]
 test = [
   "ipykernel",
   "jupyter_server>=2.10,<3",
@@ -46,6 +49,7 @@ test = [
   "pytest-asyncio",
   "pytest-cov",
   "pytest-timeout",
+  "websockets>=13",
 ]
 lint = [
   "pre_commit",

@@ -111,6 +111,8 @@ Google Colab exposes a Jupyter-compatible kernel behind an authenticating proxy.
 Use `ColabKernelClient` to connect to it. You obtain the `server_url`,
 `kernel_id`, and `proxy_token` from Colab's runtime assignment API.
 
+### Option A: connect to an existing Colab kernel
+
 ```py
 from jupyter_kernel_client import ColabKernelClient
 
@@ -124,6 +126,28 @@ reply = kernel.execute("x = 1")
 print(reply)
 # Do not shut down the Colab kernel; disconnect only.
 kernel.stop(shutdown_kernel=False)
+```
+
+### Option B: create a new kernel on the assigned Colab runtime
+
+If you omit `kernel_id`, the client creates a new kernel when `start()` is called.
+This uses the standard Jupyter `POST /api/kernels` endpoint on your assigned
+Colab runtime proxy.
+
+```py
+from jupyter_kernel_client import ColabKernelClient
+
+kernel = ColabKernelClient(
+    server_url="https://<colab-host>",
+    proxy_token="<proxy_token>",
+)
+kernel.start()  # Creates a new kernel on the assigned runtime.
+print("kernel_id:", kernel.id)
+reply = kernel.execute("x = 1 + 1; print(x)")
+print(reply)
+
+# You likely own this kernel if you created it from this client.
+kernel.stop(shutdown_kernel=True)
 ```
 
 `ColabKernelClient` forwards the proxy token both as the
@@ -169,6 +193,115 @@ The easiest way to read them is through your browser's developer tools:
 > frontend calls (authenticated with your Google session); it is not an officially
 > published public API, so the DevTools method above is the practical way to
 > obtain the values.
+
+### Can I provision a Colab runtime "from zero" with a credential?
+
+**Not for consumer Colab.** There is no official public API or Python SDK, and no
+API key, that lets you create or assign a
+[colab.research.google.com](https://colab.research.google.com) runtime from a
+standalone process. Colab's own
+[FAQ](https://research.google.com/colaboratory/faq.html) disallows bypassing the
+notebook UI to drive runtimes programmatically. So even with a credential in an
+environment variable, you cannot start a consumer Colab runtime from scratch.
+
+The supported workflow is therefore two-step:
+
+1. Obtain runtime assignment info (`server_url`, `proxy_token`, and optionally
+   `kernel_id`) from an **active Colab browser session** (see the DevTools steps
+   above).
+2. Use `ColabKernelClient` to either connect to an existing kernel (Option A) or
+   create a new kernel on that already-assigned runtime (Option B).
+
+**For a true "from zero" flow, use Colab Enterprise instead.**
+[Colab Enterprise](https://docs.cloud.google.com/colab/docs/runtimes) on Google
+Cloud *does* let you provision runtimes programmatically (via the Agent Platform
+API, `gcloud`, Terraform, or the `google-cloud-aiplatform` Python client),
+authenticated with **Google Cloud credentials** (a service account through
+`GOOGLE_APPLICATION_CREDENTIALS` / Application Default Credentials — not a Colab
+API key). Note that Colab Enterprise runtimes are designed to be driven through
+the Colab Enterprise notebook UI, so a raw public Jupyter-kernel WebSocket
+endpoint for this client is not a documented interface. Colab Enterprise
+provisioning is out of scope for `jupyter-kernel-client`.
+
+### Browser bridge: get the connection info from an authenticated session
+
+Manually copying `server_url` / `kernel_id` / `proxy_token` out of DevTools is
+tedious. The **browser bridge** automates the handoff using the same pattern as
+Google's own `colab-mcp`: a short-lived local WebSocket server receives the
+runtime details directly from your already-authenticated Colab browser tab.
+Google credentials never leave the browser — the bridge only exchanges a
+one-time local token.
+
+```py
+from jupyter_kernel_client import request_colab_connection
+
+# Opens a Colab page, then waits for the browser to post the runtime details
+# back to a localhost WebSocket protected by a generated token.
+info = request_colab_connection(timeout=60)
+
+with info.to_kernel_client() as kernel:
+    print(kernel.execute("print(1 + 1)"))
+```
+
+How it works:
+
+1. A localhost WebSocket server starts on a random port with a generated token
+   (`secrets.token_urlsafe`) and an `Origin` allowlist restricted to the Colab
+   domains.
+2. A Colab page is opened with the token and port in the URL fragment
+   (`#bridgeToken=<token>&bridgePort=<port>`).
+3. The authenticated Colab tab connects back to
+   `ws://localhost:<port>/?access_token=<token>` (or with an
+   `Authorization: Bearer <token>` header) and sends a JSON payload:
+
+   ```json
+   {
+     "server_url": "https://<colab-host>",
+     "proxy_token": "<proxy_token>",
+     "kernel_id": "<kernel_id>"
+   }
+   ```
+
+   Aliases such as `serverUrl`, `proxyToken` / `colab-runtime-proxy-token`, and
+   `kernelId` are also accepted; `kernel_id` is optional (omit it to create a new
+   kernel via Option B).
+
+> The browser side must run a cooperating page, extension or userscript that
+> reads `bridgeToken` / `bridgePort` from the launch URL and posts the payload.
+> This library implements the **local** half of the handshake; it does not add an
+> unofficial Colab API.
+
+#### Reusing the bridge for other services
+
+`request_colab_connection` is a thin preset over a fully generic, configurable
+primitive. `BrowserBridgeServer` (async) and `request_payload` (sync) can bridge
+any browser-authenticated service — configure the host, port, token, allowed
+origins, subprotocols, launch URL and auth parameter as needed:
+
+```py
+from jupyter_kernel_client import request_payload
+
+payload = request_payload(
+    launch_url="https://my-service.example/bridge#token={token}&port={port}",
+    allowed_origins=["https://my-service.example"],
+    timeout=60,
+)
+```
+
+Async usage (e.g. inside an existing event loop such as an MCP server):
+
+```py
+from jupyter_kernel_client import ColabBridge
+
+async with ColabBridge(open_browser=True) as bridge:
+    info = await bridge.receive_connection(timeout=60)
+    kernel = info.to_kernel_client()
+```
+
+This is why the bridge lives in `jupyter-kernel-client`: `code-sandboxes`
+(`ColabSandbox(use_browser_bridge=True)`) and `jupyter-mcp-server` reuse the same
+implementation. Install the optional dependency with
+`pip install 'jupyter-kernel-client[bridge]'`.
 
 ### Jupyter Konsole aka Console for Kernels
 

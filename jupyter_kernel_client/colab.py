@@ -22,7 +22,6 @@ Example:
     >>> from jupyter_kernel_client import ColabKernelClient
     >>> with ColabKernelClient(
     ...     server_url="https://....sandbox.colab.dev",
-    ...     kernel_id="fd343487-3cb8-4573-8677-8beecc39585d",
     ...     proxy_token="...",
     ... ) as kernel:
     ...     reply = kernel.execute("print('hey')")
@@ -53,6 +52,7 @@ class ColabKernelClient(KernelClient):
     Args:
         server_url: The Colab runtime proxy URL (from the assignment API).
         kernel_id: The identifier of the Colab kernel to connect to.
+            If omitted, :meth:`start` creates a new kernel on the assigned runtime.
         proxy_token: The Colab runtime proxy token (from the assignment API).
         client_agent: Value sent through the ``X-Colab-Client-Agent`` header.
         subprotocol: Websocket subprotocol to use; Colab uses the default one.
@@ -65,9 +65,9 @@ class ColabKernelClient(KernelClient):
     def __init__(
         self,
         server_url: str,
-        kernel_id: str,
         proxy_token: str,
         *,
+        kernel_id: str | None = None,
         client_agent: str = DEFAULT_COLAB_CLIENT_AGENT,
         subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.DEFAULT,
         log: logging.Logger | None = None,

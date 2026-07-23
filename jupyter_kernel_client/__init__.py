@@ -5,6 +5,15 @@
 """Jupyter Kernel Client through websocket."""
 
 from jupyter_kernel_client.__version__ import __version__
+from jupyter_kernel_client.browser_bridge import (
+    BrowserBridgeError,
+    BrowserBridgeServer,
+    BrowserBridgeTimeout,
+    ColabBridge,
+    ColabConnectionInfo,
+    request_colab_connection,
+    request_payload,
+)
 from jupyter_kernel_client.client import KernelClient
 from jupyter_kernel_client.colab import ColabKernelClient
 from jupyter_kernel_client.konsoleapp import KonsoleApp
@@ -17,6 +26,11 @@ from jupyter_kernel_client.wsclient import JupyterSubprotocol
 
 __all__ = [
     "SNIPPETS_REGISTRY",
+    "BrowserBridgeError",
+    "BrowserBridgeServer",
+    "BrowserBridgeTimeout",
+    "ColabBridge",
+    "ColabConnectionInfo",
     "ColabKernelClient",
     "KernelClient",
     "KernelHttpManager",
@@ -26,5 +40,7 @@ __all__ = [
     "VariableDescription",
     "JupyterSubprotocol",
     "get_mimebundle_text",
+    "request_colab_connection",
+    "request_payload",
     "__version__",
 ]

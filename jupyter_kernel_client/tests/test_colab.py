@@ -62,3 +62,20 @@ def test_colab_kernel_client_drops_any_provided_jupyter_token(monkeypatch):
     )
 
     assert captured["token"] is None
+
+
+def test_colab_kernel_client_allows_missing_kernel_id_for_new_kernel(monkeypatch):
+    captured: dict = {}
+
+    def fake_kernel_client_init(self, *args, **kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr("jupyter_kernel_client.colab.KernelClient.__init__", fake_kernel_client_init)
+
+    ColabKernelClient(
+        server_url="https://colab-host.example",
+        proxy_token="proxy-abc",
+    )
+
+    assert captured["kernel_id"] is None
+    assert captured["token"] is None
