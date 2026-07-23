@@ -581,9 +581,17 @@ class KernelWebSocketClient(KernelClientABC):
         params = {"session_id": self.session.session}
         if self.token is not None:
             params['token'] = self.token
-        # Merge any backend-specific extra query parameters (e.g. Colab proxy token).
+        # Merge backend-specific extra query parameters (e.g. Colab proxy token)
+        # while preserving reserved keys managed by this client.
         if self._extra_params:
-            params.update(self._extra_params)
+            for key, value in self._extra_params.items():
+                if key in {"session_id", "token"}:
+                    self.log.warning(
+                        "Ignoring extra websocket query parameter '%s' because it is reserved.",
+                        key,
+                    )
+                    continue
+                params[key] = value
         url += "?" + urlencode(params)
         subprotocols = []
         if self._subprotocol == JupyterSubprotocol.V1:

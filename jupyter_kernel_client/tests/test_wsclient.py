@@ -5,6 +5,7 @@
 import queue
 from threading import Event
 from unittest.mock import Mock
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -70,3 +71,89 @@ def test_execute_interactive_does_not_lose_message_arriving_before_event_clear(m
 
     assert reply == {"status": "ok"}
     assert messages.empty()
+
+
+def test_start_channels_appends_extra_query_params_without_overriding_reserved(monkeypatch):
+    captured: dict[str, object] = {}
+
+    class DummySocket:
+        def __init__(self, *args, **kwargs):
+            captured["url"] = args[0]
+            captured["header"] = kwargs.get("header")
+
+        def close(self):
+            return None
+
+    class DummyThread:
+        def __init__(self, *args, **kwargs):
+            self._target = kwargs.get("target")
+
+        def start(self):
+            return None
+
+        def is_alive(self):
+            return False
+
+        def join(self, timeout=None):
+            return None
+
+    monkeypatch.setattr(wsclient.websocket, "WebSocketApp", DummySocket)
+    monkeypatch.setattr(wsclient, "Thread", DummyThread)
+
+    client = KernelWebSocketClient(
+        endpoint="ws://example.test/api/kernels/kernel-1/channels",
+        token="real-token",
+        timeout=0,
+        extra_params={
+            "colab-runtime-proxy-token": "proxy-token",
+            "token": "ignored-token",
+            "session_id": "ignored-session",
+        },
+    )
+
+    client.start_channels(shell=False, iopub=False, stdin=False, hb=False, control=False)
+
+    parsed = parse_qs(urlparse(captured["url"]).query)
+    assert parsed["token"] == ["real-token"]
+    assert parsed["session_id"] == [client.session.session]
+    assert parsed["colab-runtime-proxy-token"] == ["proxy-token"]
+
+
+def test_start_channels_ignores_reserved_extra_token_when_kernel_token_is_none(monkeypatch):
+    captured: dict[str, object] = {}
+
+    class DummySocket:
+        def __init__(self, *args, **kwargs):
+            captured["url"] = args[0]
+
+        def close(self):
+            return None
+
+    class DummyThread:
+        def __init__(self, *args, **kwargs):
+            self._target = kwargs.get("target")
+
+        def start(self):
+            return None
+
+        def is_alive(self):
+            return False
+
+        def join(self, timeout=None):
+            return None
+
+    monkeypatch.setattr(wsclient.websocket, "WebSocketApp", DummySocket)
+    monkeypatch.setattr(wsclient, "Thread", DummyThread)
+
+    client = KernelWebSocketClient(
+        endpoint="ws://example.test/api/kernels/kernel-1/channels",
+        token=None,
+        timeout=0,
+        extra_params={"token": "ignored-token", "extra": "x"},
+    )
+
+    client.start_channels(shell=False, iopub=False, stdin=False, hb=False, control=False)
+
+    parsed = parse_qs(urlparse(captured["url"]).query)
+    assert "token" not in parsed
+    assert parsed["extra"] == ["x"]

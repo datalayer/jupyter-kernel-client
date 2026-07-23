@@ -115,9 +115,9 @@ Use `ColabKernelClient` to connect to it. You obtain the `server_url`,
 from jupyter_kernel_client import ColabKernelClient
 
 kernel = ColabKernelClient(
-    server_url="https://8080-m-s-kkb-use1d0-13f2m3hq9t8p1-d.us-east1-0.prod.colab.dev",
-    kernel_id="c9bba548-3995-4f26-8e1a-7b8fbb10c578",
-    proxy_token="eyJhbGciOiJFUzI1NiIsImtpZCI6IlBsNm9SZyJ9....",
+    server_url="https://<colab-host>",
+    kernel_id="<kernel_id>",
+    proxy_token="<proxy_token>",
 )
 kernel.start()
 reply = kernel.execute("x = 1")
@@ -142,7 +142,7 @@ wss://<host>/api/kernels/<kernel_id>/channels?session_id=<...>&colab-runtime-pro
 For example:
 
 ```
-wss://8080-m-s-kkb-use1d0-13f2m3hq9t8p1-d.us-east1-0.prod.colab.dev/api/kernels/c9bba548-3995-4f26-8e1a-7b8fbb10c578/channels?session_id=eba8d9a7-...&colab-runtime-proxy-token=eyJhbGci...&colab-client-agent=web
+wss://<colab-host>/api/kernels/<kernel_id>/channels?session_id=<session_id>&colab-runtime-proxy-token=<proxy_token>&colab-client-agent=web
 ```
 
 They are tied to **your** Colab session and are short-lived — they change whenever
@@ -157,8 +157,8 @@ The easiest way to read them is through your browser's developer tools:
 3. Run a cell to trigger kernel traffic.
 4. Click the `.../api/kernels/<kernel_id>/channels?...` request and read off:
    - **`server_url`** — the scheme + host *before* `/api/kernels` (change the
-     `wss://` scheme to `https://`). Colab assigns a per-session host such as
-     `https://8080-m-s-kkb-use1d0-13f2m3hq9t8p1-d.us-east1-0.prod.colab.dev`;
+    `wss://` scheme to `https://`). Colab assigns a per-session host such as
+    `https://<colab-host>.prod.colab.dev`;
      there is usually **no** `/tun/m/...` path segment.
    - **`kernel_id`** — the UUID segment right after `/api/kernels/`.
    - **`proxy_token`** — the `colab-runtime-proxy-token` query parameter (this is

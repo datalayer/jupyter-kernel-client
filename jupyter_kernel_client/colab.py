@@ -85,13 +85,15 @@ class ColabKernelClient(KernelClient):
         headers[COLAB_RUNTIME_PROXY_TOKEN_HEADER] = proxy_token
 
         # Colab authenticates through the proxy token, not the Jupyter token.
-        token = kwargs.pop("token", "unused")
+        # Drop any provided Jupyter token to avoid sending an Authorization
+        # header and a `token=` query parameter that Colab does not use.
+        kwargs.pop("token", None)
 
         super().__init__(
             kernel_id=kernel_id,
             log=log,
             server_url=server_url,
-            token=token,
+            token=None,
             client_kwargs=client_kwargs,
             headers=headers,
             **kwargs,
