@@ -27,7 +27,7 @@ To install the library, run the following command.
 pip install jupyter_kernel_client
 ```
 
-## Usage
+## Jupyter Server
 
 Check you have a Jupyter Server with ipykernel running somewhere. You can install those packages with the following command.
 
@@ -86,9 +86,7 @@ print(reply)
 kernel.stop()
 ```
 
-## Connect to an existing Kernel
-
-First start JupyterLab, open a Notebook with a Kernel and take not of the `Kernel ID`.
+To connect to an existing Jupyter Kernel, first start JupyterLab, open a Notebook with a Kernel and take not of the `Kernel ID`.
 
 > TODO: Document how to get the `Kernel ID`.
 
@@ -107,9 +105,9 @@ reply = kernel.execute("x=1")
 print(reply)
 ```
 
-## Connect to a Kaggle Kernel
+## Kaggle Kernel
 
-Kaggle supports both interactive kernel connections and batch execution from code.
+Kaggle supports both batch execution and interactive kernel connections from code.
 
 - Detailed guide: [Kaggle docs](docs/docs/kaggle.mdx)
 - Includes auth modes, channels URL retrieval, explicit and parsed connection
@@ -155,7 +153,7 @@ with KaggleKernelClient.from_channels_url(channels_url, token=None) as kernel:
     print(reply)
 ```
 
-## Connect to a Google Colab Kernel
+## Google Colab Kernel
 
 Google Colab exposes a Jupyter-compatible kernel behind an authenticating proxy.
 Use `ColabKernelClient` to connect to an already-running Colab runtime.
