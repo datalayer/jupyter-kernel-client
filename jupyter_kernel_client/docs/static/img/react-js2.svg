@@ -1,3 +1,9 @@
+<!--
+  ~ Copyright (c) 2023-2024 Datalayer, Inc.
+  ~
+  ~ BSD 3-Clause License
+-->
+
 <svg id="emoji" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
   <g id="color">
     <path fill="#92D3F5" stroke="#92D3F5" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="1.8" d="M28.1271,22.7636 c-0.3952,2.3126-0.6857,4.7995-0.8483,7.4259c-3.3469,1.871-6.3451,3.8466-8.8669,5.8105 c-6.1591-4.7995-9.4596-9.5293-8.0767-12.4346C11.9041,20.2651,19.0277,20.1604,28.1271,22.7636z"/>
