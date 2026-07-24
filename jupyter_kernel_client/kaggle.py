@@ -51,6 +51,7 @@ from jupyter_kernel_client.wsclient import JupyterSubprotocol
 
 #: Environment variable holding the Kaggle API token used for authentication.
 KAGGLE_API_TOKEN_ENV = "KAGGLE_API_TOKEN"  # noqa: S105
+_TOKEN_UNSET = object()
 #: Regular expression matching the proxied server base of a Kaggle channels URL.
 _KAGGLE_SERVER_RE = re.compile(r"^(wss?)://(.*?)/proxy", re.IGNORECASE)
 #: Regular expression extracting the kernel id from a Kaggle channels URL.
@@ -100,10 +101,10 @@ class KaggleKernelClient(KernelClient):
         kernel_id: The identifier of the Kaggle kernel to connect to. If omitted,
             :meth:`start` creates a new kernel on the runtime (which requires a
             valid API ``token``).
-        token: The Kaggle API token used to authenticate. When ``None`` (the
-            default) it falls back to the :data:`KAGGLE_API_TOKEN` environment
-            variable. Pass ``token=None`` together with an unset environment
-            variable to rely solely on the signed proxy ``server_url``.
+        token: The Kaggle API token used to authenticate. When omitted, it
+            falls back to the :data:`KAGGLE_API_TOKEN` environment variable.
+            Pass ``token=None`` to rely solely on the signed proxy
+            ``server_url`` (even if the environment variable is set).
         subprotocol: Websocket subprotocol to use; Kaggle uses the default one.
         log: Optional logger.
         **kwargs: Forwarded to :class:`~jupyter_kernel_client.client.KernelClient`.
@@ -116,7 +117,7 @@ class KaggleKernelClient(KernelClient):
         server_url: str,
         *,
         kernel_id: str | None = None,
-        token: str | None = None,
+        token: str | None | object = _TOKEN_UNSET,
         subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.DEFAULT,
         log: logging.Logger | None = None,
         **kwargs: t.Any,
@@ -124,12 +125,10 @@ class KaggleKernelClient(KernelClient):
         client_kwargs: dict[str, t.Any] = dict(kwargs.pop("client_kwargs", None) or {})
         client_kwargs.setdefault("subprotocol", subprotocol)
 
-        # Resolve the Kaggle API token from the environment when not provided.
-        # The token authenticates REST/websocket requests and is what allows a
-        # new kernel to be created when ``kernel_id`` is omitted. When neither a
-        # token nor the environment variable is set, authentication relies on the
-        # signed JWT embedded in ``server_url``.
-        if token is None:
+        # Resolve the Kaggle API token from the environment only when omitted.
+        # Explicit ``token=None`` disables env fallback and relies on signed
+        # proxy authentication embedded in ``server_url``.
+        if token is _TOKEN_UNSET:
             token = os.environ.get(KAGGLE_API_TOKEN_ENV)
 
         super().__init__(

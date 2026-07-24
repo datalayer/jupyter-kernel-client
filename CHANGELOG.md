@@ -18,8 +18,8 @@
   session with `token=None` (the signed JWT embedded in the proxied `server_url`
   provides the authentication) by parsing the notebook session's WebSocket
   *channels* URL directly.
-- Added `ColabKernelClient` (plus `parse_colab_channels_url` and
-  `ColabKernelClient.from_channels_url`) to connect to an **already-running**
+- Updated `ColabKernelClient` with `parse_colab_channels_url` and
+  `ColabKernelClient.from_channels_url` to connect to an **already-running**
   Colab kernel by reusing the runtime's WebSocket *channels* URL. Colab exposes
   no third-party API to provision runtimes, so the runtime must first be started
   in the browser; `kernel_id` is required.
