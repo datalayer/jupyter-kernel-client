@@ -49,6 +49,7 @@ print(result.succeeded)
 print(result.url)
 print(result.stdout)
 print(result.stderr)
+print(result.kernel_reply)
 print(result.to_kernel_reply())
 print(result.output_files)
 ```
@@ -59,6 +60,11 @@ print(result.output_files)
 ```python
 {"execution_count": int, "outputs": [...], "status": "ok" | "error"}
 ```
+
+`result.kernel_reply` exposes the same normalized payload directly.
+
+Batch submissions now include generated notebook cell IDs in the emitted notebook
+JSON metadata, which avoids schema warnings in newer notebook tooling.
 
 Friendly accelerator aliases are supported, for example `T4`, `P100`, `A100`, and `H100`.
 

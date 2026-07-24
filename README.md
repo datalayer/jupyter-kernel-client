@@ -130,8 +130,15 @@ result = executor.execute(
 print(result)
 print(result.status)
 print(result.stdout)
+print(result.kernel_reply)
 print(result.to_kernel_reply())
 ```
+
+`KaggleExecutionResult` includes normalized helpers:
+
+- `stdout` / `stderr` convenience properties
+- `kernel_reply` (same normalized Jupyter-like payload as `to_kernel_reply()`)
+- auto-generated notebook cell IDs in batch submissions to match modern notebook metadata expectations
 
 Quick interactive example:
 

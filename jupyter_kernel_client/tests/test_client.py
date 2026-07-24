@@ -162,7 +162,7 @@ def test_get_textplain_variables(jupyter_server, variable, set_variable, expecte
     port, token = jupyter_server
 
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
-        kernel.execute(set_variable)
+        kernel.execute(set_variable, timeout=60)
 
         values = kernel.get_variable_mimetypes(variable, "text/plain")
 
@@ -206,7 +206,7 @@ def test_set_variables_on_execute(jupyter_server, variable, value):
     port, token = jupyter_server
     variables = {variable: value}
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
-        reply = kernel.execute(f'print({variable})', variables=variables)
+        reply = kernel.execute(f'print({variable})', variables=variables, timeout=60)
         assert reply["execution_count"] == 1
         assert reply["outputs"] == [
             {
@@ -231,7 +231,7 @@ def test_set_variables(jupyter_server, variable, set_variable, expected):
     port, token = jupyter_server
 
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
-        kernel.execute(set_variable)
+        kernel.execute(set_variable, timeout=60)
 
         values = kernel.get_variable_mimetypes(variable)
 
