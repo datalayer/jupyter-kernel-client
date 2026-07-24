@@ -1,0 +1,37 @@
+---
+sidebar_position: 6
+title: Konsole
+---
+
+# Konsole
+
+Jupyter Kernel Client includes an optional interactive Konsole
+(console for kernels, REPL style).
+
+## Install Optional Dependencies
+
+```bash
+pip install "jupyter-kernel-client[konsole]"
+```
+
+## Start A Jupyter Server
+
+```bash
+jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
+```
+
+## Open Konsole
+
+```bash
+jupyter konsole --url http://localhost:8888 --token MY_TOKEN
+```
+
+Example session:
+
+```text
+[KonsoleApp] KernelHttpManager created a new kernel: ...
+Jupyter Konsole...
+
+In [1]: 1+1
+2
+```

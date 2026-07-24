@@ -1,0 +1,155 @@
+---
+sidebar_position: 5
+title: Kaggle
+---
+
+# Kaggle
+
+Kaggle notebooks expose a Jupyter-compatible kernel behind an authenticating
+proxy. `KaggleKernelClient` supports two auth modes:
+
+- API token mode (`token` arg or `KAGGLE_API_TOKEN` env var)
+- Signed proxy URL mode (`token=None` for existing browser session URLs)
+
+When using signed proxy URLs, authentication is carried by the JWT in the
+proxied `server_url` path.
+
+## Interactive Kernel
+
+Use `KaggleKernelClient` for interactive execution.
+
+- Provide a Kaggle API token to create a new kernel.
+- Or connect to an existing running session from a copied channels URL.
+
+Create a kernel with API token credentials:
+
+```python
+import os
+from jupyter_kernel_client import KaggleKernelClient
+
+os.environ["KAGGLE_API_TOKEN"] = "..."
+
+with KaggleKernelClient(
+    server_url="https://kkb-production.jupyter-proxy.kaggle.net/k/12345678/eyJhbGci.../proxy",
+) as kernel:
+    print("kernel_id:", kernel.id)
+    reply = kernel.execute("x = 1 + 1; print(x)")
+    print(reply)
+```
+
+```python
+from jupyter_kernel_client import KaggleKernelClient
+
+channels_url = (
+    "wss://kkb-production.jupyter-proxy.kaggle.net/k/12345678/eyJhbGci.../proxy"
+    "/api/kernels/11e073f0-e82d-4029-be8d-3918f7ed1a9e/channels?session_id=..."
+)
+
+with KaggleKernelClient.from_channels_url(channels_url, token=None) as kernel:
+    reply = kernel.execute("x = 1 + 1; print(x)")
+    print(reply)
+```
+
+You can also pass explicit values:
+
+```python
+from jupyter_kernel_client import KaggleKernelClient
+
+kernel = KaggleKernelClient(
+    server_url="https://kkb-production.jupyter-proxy.kaggle.net/k/12345678/eyJhbGci.../proxy",
+    kernel_id="11e073f0-e82d-4029-be8d-3918f7ed1a9e",
+)
+kernel.start()
+reply = kernel.execute("x = 1")
+print(reply)
+kernel.stop(shutdown_kernel=False)
+```
+
+Parser helper:
+
+```python
+from jupyter_kernel_client import parse_kaggle_channels_url
+
+server_url, kernel_id = parse_kaggle_channels_url(channels_url)
+```
+
+### How To Obtain The Kaggle Channels URL
+
+The official Kaggle API (`kaggle` CLI / `kagglehub`) is primarily for batch
+kernel operations (push, pull, status, output). Interactive kernel channels URL
+values come from an active browser notebook session.
+
+1. Open your notebook on https://www.kaggle.com and run any cell.
+2. Open DevTools (`F12`) and switch to Network with the WS filter.
+3. Select the `.../proxy/api/kernels/<kernel_id>/channels?...` request.
+4. Copy the full URL and pass it to `from_channels_url(...)`.
+
+Values are tied to your active browser session and rotate when sessions reconnect.
+
+## Batch Execution
+
+For notebook jobs started from code, use `KaggleKernelExecutor`.
+
+Unlike consumer Colab, Kaggle provides an official public API to create and run
+notebooks from code, without requiring an active browser session.
+
+Install optional dependencies:
+
+```bash
+pip install "jupyter-kernel-client[kaggle]"
+```
+
+Run code as a Kaggle batch job:
+
+```python
+from jupyter_kernel_client import KaggleKernelExecutor
+
+executor = KaggleKernelExecutor()
+
+result = executor.execute(
+    "print('hello from kaggle')",
+    title="jkc-demo",
+    accelerator="NvidiaTeslaT4",
+    enable_internet=True,
+    wait=True,
+    timeout=3600,
+    download_output=True,
+)
+
+print(result.status)
+print(result.succeeded)
+print(result.url)
+print(result.log)
+print(result.output_files)
+```
+
+Friendly accelerator aliases are supported, for example `T4`, `P100`, `A100`, and `H100`.
+
+For authentication in batch mode, use `~/.kaggle/kaggle.json` or
+`KAGGLE_API_TOKEN` environment credentials.
+
+Useful `execute(...)` options:
+
+- `slug` and `title` for kernel identity
+- `accelerator`, `enable_gpu`, `enable_internet`, `is_private`
+- `dataset_sources`, `competition_sources`, `kernel_sources`, `model_sources`
+- `wait=False` to submit now and poll later via `status(...)` and `output(...)`
+
+Each execution runs as a batch job and reaches terminal states like
+`complete`, `error`, or `cancel_acknowledged`.
+
+You can also submit as a script with `kernel_type="script"` when needed.
+
+Common free-tier accelerators are typically `P100` and `T4`; higher tiers like
+`A100`, `H100`, or `L4` may be limited to specific environments.
+
+Supported accelerator values include:
+
+- `NvidiaTeslaP100`
+- `NvidiaTeslaT4`
+- `NvidiaTeslaT4Highmem`
+- `NvidiaL4`
+- `NvidiaL4X1`
+- `NvidiaTeslaA100`
+- `NvidiaH100`
+- `NvidiaRtxPro6000`
