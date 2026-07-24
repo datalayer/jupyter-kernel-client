@@ -107,6 +107,47 @@ reply = kernel.execute("x=1")
 print(reply)
 ```
 
+## Connect to a Kaggle Kernel
+
+Kaggle supports both interactive kernel connections and batch execution from code.
+
+- Detailed guide: [Kaggle docs](docs/docs/kaggle.mdx)
+- Includes auth modes, channels URL retrieval, explicit and parsed connection
+  options, batch execution from zero, accelerator matrix, and operational notes.
+
+Quick batch example:
+
+```py
+from jupyter_kernel_client import KaggleKernelExecutor
+
+executor = KaggleKernelExecutor()
+result = executor.execute(
+    "print('hello from kaggle')",
+    title="jkc-demo",
+#    accelerator="NvidiaTeslaT4",
+    wait=True,
+)
+print(result)
+print(result.status)
+print(result.stdout)
+print(result.to_kernel_reply())
+```
+
+Quick interactive example:
+
+```py
+from jupyter_kernel_client import KaggleKernelClient
+
+channels_url = (
+    "wss://kkb-production.jupyter-proxy.kaggle.net/k/12345678/eyJhbGci.../proxy"
+    "/api/kernels/11e073f0-e82d-4029-be8d-3918f7ed1a9e/channels?session_id=..."
+)
+
+with KaggleKernelClient.from_channels_url(channels_url, token=None) as kernel:
+    reply = kernel.execute("x = 1 + 1; print(x)")
+    print(reply)
+```
+
 ## Connect to a Google Colab Kernel
 
 Google Colab exposes a Jupyter-compatible kernel behind an authenticating proxy.
@@ -129,44 +170,6 @@ channels_url = (
 with ColabKernelClient.from_channels_url(channels_url) as kernel:
     reply = kernel.execute("x = 1 + 1; print(x)")
     print(reply)
-```
-
-## Connect to a Kaggle Kernel
-
-Kaggle supports both interactive kernel connections and batch execution from code.
-
-- Detailed guide: [Kaggle docs](docs/docs/kaggle.mdx)
-- Includes auth modes, channels URL retrieval, explicit and parsed connection
-  options, batch execution from zero, accelerator matrix, and operational notes.
-
-Quick interactive example:
-
-```py
-from jupyter_kernel_client import KaggleKernelClient
-
-channels_url = (
-    "wss://kkb-production.jupyter-proxy.kaggle.net/k/12345678/eyJhbGci.../proxy"
-    "/api/kernels/11e073f0-e82d-4029-be8d-3918f7ed1a9e/channels?session_id=..."
-)
-
-with KaggleKernelClient.from_channels_url(channels_url, token=None) as kernel:
-    reply = kernel.execute("x = 1 + 1; print(x)")
-    print(reply)
-```
-
-Quick batch example:
-
-```py
-from jupyter_kernel_client import KaggleKernelExecutor
-
-executor = KaggleKernelExecutor()
-result = executor.execute(
-    "print('hello from kaggle')",
-    title="jkc-demo",
-    accelerator="NvidiaTeslaT4",
-    wait=True,
-)
-print(result.status)
 ```
 
 ### Jupyter Konsole aka Console for Kernels

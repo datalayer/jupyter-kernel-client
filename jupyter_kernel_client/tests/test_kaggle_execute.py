@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from jupyter_kernel_client.kaggle_execute import (
+    KaggleExecutionResult,
     KaggleKernelExecutor,
     _normalize_status,
     _normalize_accelerator,
@@ -109,6 +110,10 @@ def test_execute_success_downloads_log():
     assert api.pushed_metadata["code_file"] == "notebook.ipynb"
     assert "print('hi')" in api.pushed_code
 
+    notebook = json.loads(api.pushed_code)
+    assert notebook["cells"][0]["id"]
+    assert notebook["cells"][0]["metadata"]["language"] == "python"
+
 
 def test_execute_script_kernel_writes_python_file():
     api = _FakeApi(["COMPLETE"])
@@ -193,3 +198,71 @@ def test_explicit_username_is_used():
     )
 
     assert result.slug == "explicit/nb"
+
+
+def test_to_kernel_reply_uses_notebook_outputs_when_available():
+    result = {
+        "cells": [
+            {
+                "cell_type": "code",
+                "execution_count": 3,
+                "outputs": [
+                    {
+                        "output_type": "stream",
+                        "name": "stdout",
+                            "text": "hello from kaggle\n",
+                    }
+                ],
+            }
+        ]
+    }
+
+    execution = KaggleExecutionResult(
+        slug="me/demo",
+        status="COMPLETE",
+        notebook=result,
+        log='[{"stream_name":"stderr","data":"infra warning\\n"}]',
+    )
+
+    reply = execution.to_kernel_reply()
+    assert reply["status"] == "ok"
+    assert reply["execution_count"] == 3
+    assert reply["outputs"][0]["text"] == "hello from kaggle\n"
+
+
+def test_to_kernel_reply_falls_back_to_log_streams():
+    execution = KaggleExecutionResult(
+        slug="me/demo",
+        status="COMPLETE",
+        log=(
+            '['
+            '{"stream_name":"stdout","data":"hello\\n"},'
+            '{"stream_name":"stderr","data":"warn\\n"}'
+            ']'
+        ),
+    )
+
+    reply = execution.to_kernel_reply()
+    assert reply["status"] == "ok"
+    assert reply["execution_count"] == 0
+    assert [output["name"] for output in reply["outputs"]] == ["stdout", "stderr"]
+
+
+def test_stdout_stderr_and_repr_are_compact():
+    execution = KaggleExecutionResult(
+        slug="me/demo",
+        status="COMPLETE",
+        log=(
+            '['
+            '{"stream_name":"stdout","data":"hello\\n"},'
+            '{"stream_name":"stderr","data":"warning\\n"}'
+            ']'
+        ),
+    )
+
+    assert execution.stdout == "hello\n"
+    assert execution.stderr == "warning\n"
+    rendered = repr(execution)
+    assert "kernel_status='ok'" in rendered
+    assert "stdout='hello'" in rendered
+    assert "stderr='warning'" in rendered

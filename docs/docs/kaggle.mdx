@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 4
 title: Kaggle
 ---
 
@@ -13,6 +13,83 @@ proxy. `KaggleKernelClient` supports two auth modes:
 
 When using signed proxy URLs, authentication is carried by the JWT in the
 proxied `server_url` path.
+
+## Batch Execution
+
+For notebook jobs started from code, use `KaggleKernelExecutor`.
+
+Unlike consumer Colab, Kaggle provides an official public API to create and run
+notebooks from code, without requiring an active browser session.
+
+Install optional dependencies:
+
+```bash
+pip install "jupyter-kernel-client[kaggle]"
+```
+
+Run code as a Kaggle batch job:
+
+```python
+from jupyter_kernel_client import KaggleKernelExecutor
+
+executor = KaggleKernelExecutor()
+
+result = executor.execute(
+    "print('hello from kaggle')",
+    title="jkc-demo",
+    accelerator="NvidiaTeslaT4",
+    enable_internet=True,
+    wait=True,
+    timeout=3600,
+    download_output=True,
+)
+
+print(result.status)
+print(result.succeeded)
+print(result.url)
+print(result.stdout)
+print(result.stderr)
+print(result.to_kernel_reply())
+print(result.output_files)
+```
+
+`to_kernel_reply()` returns a Jupyter-like shape compatible with
+`KernelClient.execute(...)` responses:
+
+```python
+{"execution_count": int, "outputs": [...], "status": "ok" | "error"}
+```
+
+Friendly accelerator aliases are supported, for example `T4`, `P100`, `A100`, and `H100`.
+
+For authentication in batch mode, use `~/.kaggle/kaggle.json` or
+`KAGGLE_API_TOKEN` environment credentials.
+
+Useful `execute(...)` options:
+
+- `slug` and `title` for kernel identity
+- `accelerator`, `enable_gpu`, `enable_internet`, `is_private`
+- `dataset_sources`, `competition_sources`, `kernel_sources`, `model_sources`
+- `wait=False` to submit now and poll later via `status(...)` and `output(...)`
+
+Each execution runs as a batch job and reaches terminal states like
+`complete`, `error`, or `cancel_acknowledged`.
+
+You can also submit as a script with `kernel_type="script"` when needed.
+
+Common free-tier accelerators are typically `P100` and `T4`; higher tiers like
+`A100`, `H100`, or `L4` may be limited to specific environments.
+
+Supported accelerator values include:
+
+- `NvidiaTeslaP100`
+- `NvidiaTeslaT4`
+- `NvidiaTeslaT4Highmem`
+- `NvidiaL4`
+- `NvidiaL4X1`
+- `NvidiaTeslaA100`
+- `NvidiaH100`
+- `NvidiaRtxPro6000`
 
 ## Interactive Kernel
 
@@ -85,71 +162,3 @@ values come from an active browser notebook session.
 4. Copy the full URL and pass it to `from_channels_url(...)`.
 
 Values are tied to your active browser session and rotate when sessions reconnect.
-
-## Batch Execution
-
-For notebook jobs started from code, use `KaggleKernelExecutor`.
-
-Unlike consumer Colab, Kaggle provides an official public API to create and run
-notebooks from code, without requiring an active browser session.
-
-Install optional dependencies:
-
-```bash
-pip install "jupyter-kernel-client[kaggle]"
-```
-
-Run code as a Kaggle batch job:
-
-```python
-from jupyter_kernel_client import KaggleKernelExecutor
-
-executor = KaggleKernelExecutor()
-
-result = executor.execute(
-    "print('hello from kaggle')",
-    title="jkc-demo",
-    accelerator="NvidiaTeslaT4",
-    enable_internet=True,
-    wait=True,
-    timeout=3600,
-    download_output=True,
-)
-
-print(result.status)
-print(result.succeeded)
-print(result.url)
-print(result.log)
-print(result.output_files)
-```
-
-Friendly accelerator aliases are supported, for example `T4`, `P100`, `A100`, and `H100`.
-
-For authentication in batch mode, use `~/.kaggle/kaggle.json` or
-`KAGGLE_API_TOKEN` environment credentials.
-
-Useful `execute(...)` options:
-
-- `slug` and `title` for kernel identity
-- `accelerator`, `enable_gpu`, `enable_internet`, `is_private`
-- `dataset_sources`, `competition_sources`, `kernel_sources`, `model_sources`
-- `wait=False` to submit now and poll later via `status(...)` and `output(...)`
-
-Each execution runs as a batch job and reaches terminal states like
-`complete`, `error`, or `cancel_acknowledged`.
-
-You can also submit as a script with `kernel_type="script"` when needed.
-
-Common free-tier accelerators are typically `P100` and `T4`; higher tiers like
-`A100`, `H100`, or `L4` may be limited to specific environments.
-
-Supported accelerator values include:
-
-- `NvidiaTeslaP100`
-- `NvidiaTeslaT4`
-- `NvidiaTeslaT4Highmem`
-- `NvidiaL4`
-- `NvidiaL4X1`
-- `NvidiaTeslaA100`
-- `NvidiaH100`
-- `NvidiaRtxPro6000`

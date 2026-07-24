@@ -103,7 +103,8 @@ def _build_notebook(code: str) -> dict[str, t.Any]:
         "cells": [
             {
                 "cell_type": "code",
-                "metadata": {},
+                "id": uuid.uuid4().hex[:8],
+                "metadata": {"language": "python"},
                 "execution_count": None,
                 "outputs": [],
                 "source": code,
@@ -163,11 +164,128 @@ class KaggleExecutionResult:
     log: str | None = None
     #: The executed notebook (nbformat dict), when present in the output.
     notebook: dict[str, t.Any] | None = None
+    #: Jupyter-style execute reply derived from the notebook/log output.
+    kernel_reply: dict[str, t.Any] | None = None
 
     @property
     def succeeded(self) -> bool:
         """Whether the run finished with a ``COMPLETE`` status."""
         return self.status == "COMPLETE"
+
+    @property
+    def outputs(self) -> list[dict[str, t.Any]]:
+        """Jupyter-like output list for the execution."""
+        reply = self.kernel_reply or self.to_kernel_reply()
+        return list(reply.get("outputs", []))
+
+    @property
+    def stdout(self) -> str:
+        """Merged stdout stream extracted from kernel-like outputs."""
+        chunks: list[str] = []
+        for output in self.outputs:
+            if output.get("output_type") == "stream" and output.get("name") == "stdout":
+                chunks.append(str(output.get("text", "")))
+        return "".join(chunks)
+
+    @property
+    def stderr(self) -> str:
+        """Merged stderr stream extracted from kernel-like outputs."""
+        chunks: list[str] = []
+        for output in self.outputs:
+            if output.get("output_type") == "stream" and output.get("name") == "stderr":
+                chunks.append(str(output.get("text", "")))
+        return "".join(chunks)
+
+    def __repr__(self) -> str:
+        """Compact representation that avoids printing full raw logs."""
+        reply = self.kernel_reply or self.to_kernel_reply()
+        return (
+            "KaggleExecutionResult("
+            f"slug={self.slug!r}, status={self.status!r}, kernel_status={reply.get('status')!r}, "
+            f"url={self.url!r}, version_number={self.version_number!r}, "
+            f"execution_count={reply.get('execution_count', 0)!r}, "
+            f"stdout={self.stdout.strip()!r}, stderr={self.stderr.strip()!r}, "
+            f"failure_message={self.failure_message!r}, output_dir={self.output_dir!r}, "
+            f"output_files={self.output_files!r}"
+            ")"
+        )
+
+    def to_kernel_reply(self) -> dict[str, t.Any]:
+        """Return a Jupyter-like execute reply.
+
+        This mirrors the shape returned by ``KernelClient.execute``:
+        ``{"execution_count": int, "outputs": list, "status": "ok"|"error"}``.
+        """
+        outputs: list[dict[str, t.Any]] = []
+        execution_count = 0
+
+        if self.notebook:
+            outputs, execution_count = _extract_notebook_outputs(self.notebook)
+
+        if not outputs and self.log:
+            outputs = _outputs_from_kaggle_log(self.log)
+
+        has_error_output = any(output.get("output_type") == "error" for output in outputs)
+        status = "ok" if (self.succeeded and not has_error_output) else "error"
+
+        return {
+            "execution_count": execution_count,
+            "outputs": outputs,
+            "status": status,
+        }
+
+
+def _extract_notebook_outputs(notebook: dict[str, t.Any]) -> tuple[list[dict[str, t.Any]], int]:
+    """Extract outputs from the last executed code cell in an nbformat dict."""
+    execution_count = 0
+    outputs: list[dict[str, t.Any]] = []
+
+    for cell in notebook.get("cells", []):
+        if cell.get("cell_type") != "code":
+            continue
+        cell_outputs = cell.get("outputs") or []
+        if not cell_outputs:
+            continue
+        outputs = [
+            output for output in cell_outputs if isinstance(output, dict) and "output_type" in output
+        ]
+        count = cell.get("execution_count")
+        execution_count = count if isinstance(count, int) else execution_count
+
+    return outputs, execution_count
+
+
+def _outputs_from_kaggle_log(log: str) -> list[dict[str, t.Any]]:
+    """Convert Kaggle log stream events into Jupyter stream outputs."""
+    if not log.strip():
+        return []
+
+    events: list[dict[str, t.Any]] = []
+    try:
+        parsed = json.loads(log)
+        if isinstance(parsed, list):
+            events = [event for event in parsed if isinstance(event, dict)]
+    except ValueError:
+        # Keep plain-text fallback for unexpected log formats.
+        return [{"output_type": "stream", "name": "stdout", "text": log}]
+
+    outputs: list[dict[str, t.Any]] = []
+    for event in events:
+        stream_name = str(event.get("stream_name", "stdout")).strip().lower()
+        if stream_name not in {"stdout", "stderr"}:
+            stream_name = "stdout"
+        text = event.get("data")
+        if text is None:
+            continue
+        outputs.append(
+            {
+                "output_type": "stream",
+                "name": stream_name,
+                "text": str(text),
+            }
+        )
+
+    return outputs
 
 
 class KaggleKernelExecutor:
@@ -330,6 +448,8 @@ class KaggleKernelExecutor:
 
         if download_output:
             self._download_output(ref, result, output_dir)
+
+        result.kernel_reply = result.to_kernel_reply()
 
         return result
 
