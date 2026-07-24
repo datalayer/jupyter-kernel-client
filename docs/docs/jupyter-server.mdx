@@ -1,0 +1,90 @@
+---
+sidebar_position: 2
+title: Jupyter Server
+---
+
+# Jupyter Server
+
+Install the package:
+
+```bash
+pip install jupyter_kernel_client
+```
+
+Install Jupyter server prerequisites:
+
+```bash
+pip install jupyter-server ipykernel
+```
+
+Start a Jupyter Server with a token:
+
+```bash
+jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token MY_TOKEN
+```
+
+Create a client, execute code, and inspect outputs:
+
+```python
+import os
+from platform import node
+
+from jupyter_kernel_client import KernelClient
+
+with KernelClient(server_url="http://localhost:8888", token="MY_TOKEN") as kernel:
+    code = """import os
+from platform import node
+print(f\"Hey {os.environ.get('USER', 'John Smith')} from {node()}.\")
+"""
+    reply = kernel.execute(code)
+    print(reply)
+```
+
+Typical response:
+
+```json
+{
+  "execution_count": 1,
+  "outputs": [
+    {
+      "output_type": "stream",
+      "name": "stdout",
+      "text": "Hey user from host.\n"
+    }
+  ],
+  "status": "ok"
+}
+```
+
+You can also manage lifecycle manually:
+
+```python
+from jupyter_kernel_client import KernelClient
+
+kernel = KernelClient(server_url="http://localhost:8888", token="MY_TOKEN")
+kernel.start()
+reply = kernel.execute("x = 1 + 1")
+print(reply)
+kernel.stop()
+```
+
+## Connect To An Existing Kernel
+
+If you already have a notebook kernel running in JupyterLab, connect with `kernel_id`:
+
+```python
+from jupyter_kernel_client import KernelClient
+
+kernel = KernelClient(
+    server_url="http://localhost:8888",
+    kernel_id="83ef59b7-9c78-40bd-8cc2-4447635e7d0b",
+    token="MY_TOKEN",
+)
+kernel.start()
+reply = kernel.execute("x = 1")
+print(reply)
+```
+
+When attaching to an existing shared kernel, avoid shutting it down unless you own the session.
+
+To discover a live `kernel_id`, start JupyterLab and inspect the active kernel session in the UI or server APIs.
