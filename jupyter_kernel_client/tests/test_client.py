@@ -142,7 +142,7 @@ def test_get_all_mimetype_variables(jupyter_server, variable, set_variable, expe
     port, token = jupyter_server
 
     with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
-        kernel.execute(set_variable)
+        kernel.execute(set_variable, timeout=60)
 
         values = kernel.get_variable_mimetypes(variable)
 
