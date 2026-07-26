@@ -2,7 +2,7 @@
 #
 # BSD 3-Clause License
 
-"""Typing protocols for kernel client implementations."""
+"""Typing protocols for jupyter kernel client implementations."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from jupyter_kernel_client.models import VariableDescription
 
 
 @runtime_checkable
-class IKernelClient(Protocol):
-    """Protocol describing the public KernelClient interface."""
+class IJupyterKernelClient(Protocol):
+    """Protocol describing the public JupyterKernelClient interface."""
 
     @property
     def execution_state(self) -> str | None: ...
@@ -73,7 +73,7 @@ class IKernelClient(Protocol):
 
     def restart(self, timeout: float = 60.0) -> None: ...
 
-    def __enter__(self) -> IKernelClient: ...
+    def __enter__(self) -> IJupyterKernelClient: ...
 
     def __exit__(self, exc_type, exc_value, exc_tb) -> None: ...
 

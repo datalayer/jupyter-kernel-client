@@ -11,10 +11,10 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from jupyter_kernel_client import KernelClient, VariableDescription
+from jupyter_kernel_client import JupyterKernelClient, VariableDescription
 
 
-def _execute_with_retry(kernel: KernelClient, code: str, timeout: float = 60.0, attempts: int = 2):
+def _execute_with_retry(kernel: JupyterKernelClient, code: str, timeout: float = 60.0, attempts: int = 2):
     """Execute code with a lightweight retry for transient CI kernel delays."""
     last_exc: Exception | None = None
     for idx in range(attempts):
@@ -32,7 +32,7 @@ def _execute_with_retry(kernel: KernelClient, code: str, timeout: float = 60.0, 
 def test_execution_as_context_manager(jupyter_server):
     port, token = jupyter_server
 
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         reply = kernel.execute(
             """import os
 from platform import node
@@ -54,7 +54,7 @@ print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
 def test_execution_no_context_manager(jupyter_server):
     port, token = jupyter_server
 
-    kernel = KernelClient(server_url=f"http://localhost:{port}", token=token)
+    kernel = JupyterKernelClient(server_url=f"http://localhost:{port}", token=token)
     kernel.start()
     try:
         reply = kernel.execute(
@@ -81,11 +81,11 @@ def test_list_kernels_client(jupyter_server):
     port, token = jupyter_server
 
     # Start a kernel to ensure the list is not empty
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         kernel_id = kernel.id
 
         # Use a new client to list the kernels
-        listing_client = KernelClient(server_url=f"http://localhost:{port}", token=token)
+        listing_client = JupyterKernelClient(server_url=f"http://localhost:{port}", token=token)
         kernels = listing_client.list_kernels()
 
         assert isinstance(kernels, list)
@@ -105,7 +105,7 @@ def test_list_kernels_client(jupyter_server):
 def test_list_variables(jupyter_server):
     port, token = jupyter_server
 
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         kernel.execute(
             """a = 1.0
 b = "hello the world"
@@ -157,7 +157,7 @@ d = {"name": "titi"}
 def test_get_all_mimetype_variables(jupyter_server, variable, set_variable, expected):
     port, token = jupyter_server
 
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         _execute_with_retry(kernel, f"{set_variable}\nprint('__set__')", timeout=60)
 
         values = kernel.get_variable_mimetypes(variable)
@@ -177,7 +177,7 @@ def test_get_all_mimetype_variables(jupyter_server, variable, set_variable, expe
 def test_get_textplain_variables(jupyter_server, variable, set_variable, expected):
     port, token = jupyter_server
 
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         _execute_with_retry(kernel, f"{set_variable}\nprint('__set__')", timeout=60)
 
         values = kernel.get_variable_mimetypes(variable, "text/plain")
@@ -199,7 +199,7 @@ def test_get_textplain_variables(jupyter_server, variable, set_variable, expecte
 def test_set_variable_and_get_variable(jupyter_server, variable, value):
     port, token = jupyter_server
 
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         kernel.set_variable(variable, value)
         retrieved_value = kernel.get_variable(variable)
 
@@ -223,7 +223,7 @@ def test_set_variable_and_get_variable(jupyter_server, variable, value):
 def test_set_variables_on_execute(jupyter_server, variable, value):
     port, token = jupyter_server
     variables = {variable: value}
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         reply = kernel.execute(f'print({variable})', variables=variables, timeout=60)
         assert reply["execution_count"] == 1
         assert reply["outputs"] == [
@@ -248,7 +248,7 @@ def test_set_variables_on_execute(jupyter_server, variable, value):
 def test_set_variables(jupyter_server, variable, set_variable, expected):
     port, token = jupyter_server
 
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         _execute_with_retry(kernel, f"{set_variable}\nprint('__set__')", timeout=60)
 
         values = kernel.get_variable_mimetypes(variable)
@@ -263,7 +263,7 @@ async def test_multi_execution_in_event_loop(jupyter_server):
     current_user = os.environ.get('USER', 'John Smith')
     current_node = node()
 
-    with KernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
+    with JupyterKernelClient(server_url=f"http://localhost:{port}", token=token) as kernel:
         all = await asyncio.gather(
             asyncio.to_thread(
                 kernel.execute,

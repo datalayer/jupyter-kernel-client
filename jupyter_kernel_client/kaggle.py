@@ -5,7 +5,7 @@
 """Kaggle kernel client.
 
 This module provides :class:`KaggleKernelClient`, a thin specialization of
-:class:`~jupyter_kernel_client.client.KernelClient` that knows how to connect to
+:class:`~jupyter_kernel_client.client.JupyterKernelClient` that knows how to connect to
 a Kaggle interactive notebook runtime.
 
 There are two ways to authenticate:
@@ -46,7 +46,7 @@ import os
 import re
 import typing as t
 
-from jupyter_kernel_client.client import KernelClient
+from jupyter_kernel_client.client import JupyterKernelClient
 from jupyter_kernel_client.wsclient import JupyterSubprotocol
 
 #: Environment variable holding the Kaggle API token used for authentication.
@@ -92,7 +92,7 @@ def parse_kaggle_channels_url(channels_url: str) -> tuple[str, str]:
     return server_url, kernel_id
 
 
-class KaggleKernelClient(KernelClient):
+class KaggleKernelClient(JupyterKernelClient):
     """Kernel client connected to a Kaggle interactive notebook runtime.
 
     Args:
@@ -107,7 +107,7 @@ class KaggleKernelClient(KernelClient):
             ``server_url`` (even if the environment variable is set).
         subprotocol: Websocket subprotocol to use; Kaggle uses the default one.
         log: Optional logger.
-        **kwargs: Forwarded to :class:`~jupyter_kernel_client.client.KernelClient`.
+        **kwargs: Forwarded to :class:`~jupyter_kernel_client.client.JupyterKernelClient`.
             ``client_kwargs`` may be provided and is merged with the
             Kaggle-specific values.
     """

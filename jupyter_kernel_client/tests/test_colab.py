@@ -35,7 +35,7 @@ def test_colab_kernel_client_injects_headers_and_extra_params(monkeypatch):
     def fake_kernel_client_init(self, *args, **kwargs):
         captured.update(kwargs)
 
-    monkeypatch.setattr("jupyter_kernel_client.colab.KernelClient.__init__", fake_kernel_client_init)
+    monkeypatch.setattr("jupyter_kernel_client.colab.JupyterKernelClient.__init__", fake_kernel_client_init)
 
     ColabKernelClient(
         server_url="https://colab-host.example",
@@ -66,7 +66,7 @@ def test_colab_kernel_client_drops_any_provided_jupyter_token(monkeypatch):
     def fake_kernel_client_init(self, *args, **kwargs):
         captured.update(kwargs)
 
-    monkeypatch.setattr("jupyter_kernel_client.colab.KernelClient.__init__", fake_kernel_client_init)
+    monkeypatch.setattr("jupyter_kernel_client.colab.JupyterKernelClient.__init__", fake_kernel_client_init)
 
     ColabKernelClient(
         server_url="https://colab-host.example",
@@ -108,7 +108,7 @@ def test_colab_kernel_client_from_channels_url(monkeypatch):
     def fake_kernel_client_init(self, *args, **kwargs):
         captured.update(kwargs)
 
-    monkeypatch.setattr("jupyter_kernel_client.colab.KernelClient.__init__", fake_kernel_client_init)
+    monkeypatch.setattr("jupyter_kernel_client.colab.JupyterKernelClient.__init__", fake_kernel_client_init)
 
     ColabKernelClient.from_channels_url(CHANNELS_URL)
 

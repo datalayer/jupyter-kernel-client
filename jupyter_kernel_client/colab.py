@@ -5,7 +5,7 @@
 """Google Colab kernel client.
 
 This module provides :class:`ColabKernelClient`, a thin specialization of
-:class:`~jupyter_kernel_client.client.KernelClient` that connects to an
+:class:`~jupyter_kernel_client.client.JupyterKernelClient` that connects to an
 **already-running** Google Colab kernel.
 
 A Colab runtime is reached through a per-session proxy. Compared to a vanilla
@@ -52,7 +52,7 @@ import re
 import typing as t
 from urllib.parse import parse_qs, urlsplit
 
-from jupyter_kernel_client.client import KernelClient
+from jupyter_kernel_client.client import JupyterKernelClient
 from jupyter_kernel_client.wsclient import JupyterSubprotocol
 
 #: HTTP header identifying the client agent to the Colab proxy.
@@ -128,7 +128,7 @@ def parse_colab_channels_url(channels_url: str) -> tuple[str, str, str]:
     return server_url, kernel_id, proxy_token
 
 
-class ColabKernelClient(KernelClient):
+class ColabKernelClient(JupyterKernelClient):
     """Kernel client connected to an existing Google Colab runtime.
 
     This client connects to a kernel that is **already running** on a Colab
@@ -143,7 +143,7 @@ class ColabKernelClient(KernelClient):
         client_agent: Value sent through the ``X-Colab-Client-Agent`` header.
         subprotocol: Websocket subprotocol to use; Colab uses the default one.
         log: Optional logger.
-        **kwargs: Forwarded to :class:`~jupyter_kernel_client.client.KernelClient`.
+        **kwargs: Forwarded to :class:`~jupyter_kernel_client.client.JupyterKernelClient`.
             ``client_kwargs`` and ``headers`` may be provided and are merged with
             the Colab-specific values.
     """
