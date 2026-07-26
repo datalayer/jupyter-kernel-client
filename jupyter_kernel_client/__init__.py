@@ -16,6 +16,7 @@ from jupyter_kernel_client.kaggle_execute import (
     KaggleExecutionResult,
     KaggleKernelExecutor,
 )
+from jupyter_kernel_client.interfaces import IKernelClient
 from jupyter_kernel_client.konsoleapp import KonsoleApp
 from jupyter_kernel_client.manager import KernelHttpManager
 from jupyter_kernel_client.models import VariableDescription
@@ -32,6 +33,7 @@ __all__ = [
     "KaggleKernelClient",
     "KaggleKernelExecutor",
     "KernelClient",
+    "IKernelClient",
     "KernelHttpManager",
     "KernelWebSocketClient",
     "KonsoleApp",
