@@ -213,7 +213,7 @@ class KaggleExecutionResult:
     def to_kernel_reply(self) -> dict[str, t.Any]:
         """Return a Jupyter-like execute reply.
 
-        This mirrors the shape returned by ``KernelClient.execute``:
+        This mirrors the shape returned by ``JupyterKernelClient.execute``:
         ``{"execution_count": int, "outputs": list, "status": "ok"|"error"}``.
         """
         outputs: list[dict[str, t.Any]] = []

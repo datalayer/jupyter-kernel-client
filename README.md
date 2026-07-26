@@ -48,9 +48,9 @@ jupyter server --port 8888 --ServerApp.port_retries 0 --IdentityProvider.token M
 import os
 
 from platform import node
-from jupyter_kernel_client import KernelClient
+from jupyter_kernel_client import JupyterKernelClient
 
-with KernelClient(server_url="http://localhost:8888", token="MY_TOKEN") as kernel:
+with JupyterKernelClient(server_url="http://localhost:8888", token="MY_TOKEN") as kernel:
     code = """import os
 from platform import node
 print(f"Hey {os.environ.get('USER', 'John Smith')} from {node()}.")
@@ -77,9 +77,9 @@ Check the response.
 Instead of using the kernel client as context manager, you can call the `start()` and `stop()` methods.
 
 ```py
-from jupyter_kernel_client import KernelClient
+from jupyter_kernel_client import JupyterKernelClient
 
-kernel = KernelClient(server_url="http://localhost:8888", token="MY_TOKEN")
+kernel = JupyterKernelClient(server_url="http://localhost:8888", token="MY_TOKEN")
 kernel.start()
 reply = kernel.execute(code)
 print(reply)
@@ -97,9 +97,9 @@ make jupyterlab
 You can now connect to the existing Kernel and run code (do not invoke `stop`).
 
 ```py
-from jupyter_kernel_client import KernelClient
+from jupyter_kernel_client import JupyterKernelClient
 
-kernel = KernelClient(server_url="http://localhost:8888", kernel_id="83ef59b7-9c78-40bd-8cc2-4447635e7d0b", token="MY_TOKEN")
+kernel = JupyterKernelClient(server_url="http://localhost:8888", kernel_id="83ef59b7-9c78-40bd-8cc2-4447635e7d0b", token="MY_TOKEN")
 kernel.start()
 reply = kernel.execute("x=1")
 print(reply)

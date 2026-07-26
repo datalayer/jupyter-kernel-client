@@ -28,11 +28,11 @@ def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> s
     It will equal all indexes if the outputs was cleared.
 
     Example:
-        This callback is meant to be used with ``KernelClient.execute_interactive``::
+        This callback is meant to be used with ``JupyterKernelClient.execute_interactive``::
 
             from functools from partial
-            from jupyter_kernel_client import KernelClient
-            with KernelClient(server_url, token) as kernel:
+            from jupyter_kernel_client import JupyterKernelClient
+            with JupyterKernelClient(server_url, token) as kernel:
                 outputs = []
                 kernel.execute_interactive(
                     "print('hello')",
@@ -105,7 +105,7 @@ def output_hook(outputs: list[dict[str, t.Any]], message: dict[str, t.Any]) -> s
     return set()
 
 
-class KernelClient(LoggingConfigurable):
+class JupyterKernelClient(LoggingConfigurable):
     """Jupyter Kernel Client
 
     Example:
@@ -120,9 +120,9 @@ class KernelClient(LoggingConfigurable):
 
             import os
             from platform import node
-            from jupyter_kernel_client import KernelClient
+            from jupyter_kernel_client import JupyterKernelClient
 
-            with KernelClient(server_url="http://localhost:8888", token="abcedfgh...") as kernel:
+            with JupyterKernelClient(server_url="http://localhost:8888", token="abcedfgh...") as kernel:
                 reply = kernel.execute(
                     "import os\nfrom platform import node\nprint(f\"Hey {os.environ.get('USER', 'John Smith')} from {node()}.\")"
                 )
@@ -188,7 +188,7 @@ class KernelClient(LoggingConfigurable):
     def execution_state(self) -> str | None:
         """Kernel process execution state.
 
-        This can only be trusted after a call to ``KernelClient.refresh``.
+        This can only be trusted after a call to ``JupyterKernelClient.refresh``.
         """
         return self._manager.kernel["execution_state"] if self._manager.kernel else None
 
@@ -218,7 +218,7 @@ class KernelClient(LoggingConfigurable):
     def last_activity(self) -> datetime.datetime | None:
         """Kernel process last activity.
 
-        This can only be trusted after a call to ``KernelClient.refresh``.
+        This can only be trusted after a call to ``JupyterKernelClient.refresh``.
         """
         return (
             datetime.datetime.strptime(
@@ -385,7 +385,7 @@ class KernelClient(LoggingConfigurable):
         """Restarts a kernel."""
         return self._manager.restart_kernel(timeout=timeout)
 
-    def __enter__(self) -> KernelClient:
+    def __enter__(self) -> JupyterKernelClient:
         self.start()
         return self
 

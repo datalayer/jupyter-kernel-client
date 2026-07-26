@@ -5,7 +5,7 @@
 """Jupyter Kernel Client through websocket."""
 
 from jupyter_kernel_client.__version__ import __version__
-from jupyter_kernel_client.client import KernelClient
+from jupyter_kernel_client.client import JupyterKernelClient
 from jupyter_kernel_client.colab import ColabKernelClient, parse_colab_channels_url
 from jupyter_kernel_client.kaggle import (
     KAGGLE_API_TOKEN_ENV,
@@ -16,6 +16,7 @@ from jupyter_kernel_client.kaggle_execute import (
     KaggleExecutionResult,
     KaggleKernelExecutor,
 )
+from jupyter_kernel_client.interfaces import IJupyterKernelClient
 from jupyter_kernel_client.konsoleapp import KonsoleApp
 from jupyter_kernel_client.manager import KernelHttpManager
 from jupyter_kernel_client.models import VariableDescription
@@ -31,7 +32,8 @@ __all__ = [
     "KaggleExecutionResult",
     "KaggleKernelClient",
     "KaggleKernelExecutor",
-    "KernelClient",
+    "JupyterKernelClient",
+    "IJupyterKernelClient",
     "KernelHttpManager",
     "KernelWebSocketClient",
     "KonsoleApp",

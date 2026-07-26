@@ -55,7 +55,7 @@ print(result.output_files)
 ```
 
 `to_kernel_reply()` returns a Jupyter-like shape compatible with
-`KernelClient.execute(...)` responses:
+`JupyterKernelClient.execute(...)` responses:
 
 ```python
 {"execution_count": int, "outputs": [...], "status": "ok" | "error"}

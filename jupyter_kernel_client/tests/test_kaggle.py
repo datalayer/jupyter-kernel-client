@@ -46,7 +46,7 @@ def test_kaggle_kernel_client_uses_explicit_token(monkeypatch):
 
     monkeypatch.delenv("KAGGLE_API_TOKEN", raising=False)
     monkeypatch.setattr(
-        "jupyter_kernel_client.kaggle.KernelClient.__init__", fake_kernel_client_init
+        "jupyter_kernel_client.kaggle.JupyterKernelClient.__init__", fake_kernel_client_init
     )
 
     KaggleKernelClient(
@@ -69,7 +69,7 @@ def test_kaggle_kernel_client_reads_token_from_env(monkeypatch):
 
     monkeypatch.setenv("KAGGLE_API_TOKEN", "env-token")
     monkeypatch.setattr(
-        "jupyter_kernel_client.kaggle.KernelClient.__init__", fake_kernel_client_init
+        "jupyter_kernel_client.kaggle.JupyterKernelClient.__init__", fake_kernel_client_init
     )
 
     KaggleKernelClient(server_url=SERVER_URL)
@@ -85,7 +85,7 @@ def test_kaggle_kernel_client_token_none_without_env(monkeypatch):
 
     monkeypatch.delenv("KAGGLE_API_TOKEN", raising=False)
     monkeypatch.setattr(
-        "jupyter_kernel_client.kaggle.KernelClient.__init__", fake_kernel_client_init
+        "jupyter_kernel_client.kaggle.JupyterKernelClient.__init__", fake_kernel_client_init
     )
 
     KaggleKernelClient(server_url=SERVER_URL)
@@ -101,7 +101,7 @@ def test_kaggle_kernel_client_from_channels_url(monkeypatch):
 
     monkeypatch.delenv("KAGGLE_API_TOKEN", raising=False)
     monkeypatch.setattr(
-        "jupyter_kernel_client.kaggle.KernelClient.__init__", fake_kernel_client_init
+        "jupyter_kernel_client.kaggle.JupyterKernelClient.__init__", fake_kernel_client_init
     )
 
     KaggleKernelClient.from_channels_url(CHANNELS_URL)
@@ -118,7 +118,7 @@ def test_kaggle_kernel_client_allows_missing_kernel_id_for_new_kernel(monkeypatc
 
     monkeypatch.setenv("KAGGLE_API_TOKEN", "env-token")
     monkeypatch.setattr(
-        "jupyter_kernel_client.kaggle.KernelClient.__init__", fake_kernel_client_init
+        "jupyter_kernel_client.kaggle.JupyterKernelClient.__init__", fake_kernel_client_init
     )
 
     KaggleKernelClient(server_url=SERVER_URL)
