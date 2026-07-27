@@ -16,10 +16,10 @@
   "dependencies": {
     "@datalayer/icons-react": "^1.0.0",
     "@datalayer/primer-addons": "^1.0.12",
-    "@docusaurus/core": "^3.5.2",
-    "@docusaurus/preset-classic": "^3.5.2",
-    "@docusaurus/theme-live-codeblock": "^3.5.2",
-    "@docusaurus/theme-mermaid": "^3.5.2",
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@docusaurus/theme-live-codeblock": "3.10.2",
+    "@docusaurus/theme-mermaid": "3.10.2",
     "@mdx-js/react": "^3.0.1",
     "@primer/react-brand": "^0.58.0",
     "clsx": "^2.1.1",
@@ -31,12 +31,9 @@
     "react-modal-image": "^2.5.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.4.0",
+    "@docusaurus/module-type-aliases": "3.10.2",
     "@tsconfig/docusaurus": "^2.0.3",
     "cross-env": "^7.0.3"
-  },
-  "overrides": {
-    "webpackbar": "^7.0.0"
   },
   "browserslist": {
     "production": [

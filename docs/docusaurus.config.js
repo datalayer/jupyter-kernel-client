@@ -11,19 +11,17 @@
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
-  title: 'Jupyter Kernel Client',
+  title: '🪐 > Jupyter Kernel Client',
   tagline: 'Jupyter Kernel Client',
   url: 'https://jupyter-kernel-client.datalayer.tech',
   baseUrl: '/',
   onBrokenLinks: 'throw',
+  onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'datalayer',
   projectName: 'datalayer',
   markdown: {
     mermaid: true,
-    hooks: {
-      onBrokenMarkdownLinks: 'warn',
-    },
   },
   plugins: [
     '@docusaurus/theme-live-codeblock',
@@ -44,6 +42,30 @@ module.exports = {
         src: 'img/datalayer/logo.svg',
       },
       items: [
+        {
+          type: 'doc',
+          docId: 'jupyter-server',
+          position: 'left',
+          label: 'Jupyter Server',
+        },
+        {
+          type: 'doc',
+          docId: 'kaggle',
+          position: 'left',
+          label: 'Kaggle',
+        },
+        {
+          type: 'doc',
+          docId: 'google-colab',
+          position: 'left',
+          label: 'Colab',
+        },
+        {
+          type: 'doc',
+          docId: 'konsole',
+          position: 'left',
+          label: 'Konsole',
+        },
         {
           href: 'https://discord.gg/YQFwvmSSuR',
           position: 'right',
@@ -101,7 +123,7 @@ module.exports = {
           title: 'Docs',
           items: [
             {
-              label: 'Jupyter Kernel Client',
+              label: 'Code Sandboxes',
               to: '/',
             },
           ],
@@ -155,8 +177,8 @@ module.exports = {
         docs: {
           routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
-          docItemComponent: '@theme/CustomDocItem',  
-          editUrl: 'https://github.com/datalayer/jupyter-kernel-client/edit/main/',
+          docItemComponent: '@theme/CustomDocItem',
+          editUrl: 'https://github.com/datalayer/code-sandboxes/edit/main/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
