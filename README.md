@@ -8,18 +8,18 @@
 
 [![Become a Sponsor](https://img.shields.io/static/v1?label=Become%20a%20Sponsor&message=%E2%9D%A4&logo=GitHub&style=flat&color=1ABC9C)](https://github.com/sponsors/datalayer)
 
-# 🪐 Jupyter Kernel Client
-
-> Jupyter Kernel Client through HTTP and WebSocket
+# 🪐 > Jupyter Kernel Client
 
 [![Github Actions Status](https://github.com/datalayer/jupyter-kernel-client/workflows/Build/badge.svg)](https://github.com/datalayer/jupyter-kernel-client/actions/workflows/build.yml)
 [![PyPI - Version](https://img.shields.io/pypi/v/jupyter-kernel-client)](https://pypi.org/project/jupyter-kernel-client)
 
 `Jupyter Kernel Client` allows you to connect to live Jupyter Kernels through HTTP and WebSocket.
 
-> A `Kernel` is the process responsible to execute the notebook code.
+A `Kernel` is the process responsible to execute the notebook code.
 
 `Jupyter Kernel Client` also provides a easy to use interactive Konsole (console for **K**ernels aka REPL, Read-Evaluate-Print-Loop).
+
+## Install
 
 To install the library, run the following command.
 
@@ -27,7 +27,7 @@ To install the library, run the following command.
 pip install jupyter_kernel_client
 ```
 
-## Jupyter Server
+## Jupyter Server Kernel
 
 Check you have a Jupyter Server with ipykernel running somewhere. You can install those packages with the following command.
 
@@ -177,9 +177,9 @@ with ColabKernelClient.from_channels_url(channels_url) as kernel:
     print(reply)
 ```
 
-### Jupyter Konsole aka Console for Kernels
+## Jupyter Konsole
 
-This package can be used to open a Jupyter Console to a Jupyter Kernel 🐣.
+Jupyter Konsole can be used to open a Console to a Kernel.
 
 1. Install the optional dependencies.
 
