@@ -6,16 +6,6 @@
 
 from jupyter_kernel_client.__version__ import __version__
 from jupyter_kernel_client.client import JupyterKernelClient
-from jupyter_kernel_client.colab import ColabKernelClient, parse_colab_channels_url
-from jupyter_kernel_client.kaggle import (
-    KAGGLE_API_TOKEN_ENV,
-    KaggleKernelClient,
-    parse_kaggle_channels_url,
-)
-from jupyter_kernel_client.kaggle_execute import (
-    KaggleExecutionResult,
-    KaggleKernelExecutor,
-)
 from jupyter_kernel_client.interfaces import IJupyterKernelClient
 from jupyter_kernel_client.konsoleapp import KonsoleApp
 from jupyter_kernel_client.manager import KernelHttpManager
@@ -25,15 +15,10 @@ from jupyter_kernel_client.utils import get_mimebundle_text
 from jupyter_kernel_client.wsclient import JupyterSubprotocol, KernelWebSocketClient
 
 __all__ = [
-    "KAGGLE_API_TOKEN_ENV",
     "SNIPPETS_REGISTRY",
-    "ColabKernelClient",
-    "JupyterSubprotocol",
-    "KaggleExecutionResult",
-    "KaggleKernelClient",
-    "KaggleKernelExecutor",
-    "JupyterKernelClient",
     "IJupyterKernelClient",
+    "JupyterKernelClient",
+    "JupyterSubprotocol",
     "KernelHttpManager",
     "KernelWebSocketClient",
     "KonsoleApp",
@@ -41,6 +26,4 @@ __all__ = [
     "VariableDescription",
     "__version__",
     "get_mimebundle_text",
-    "parse_colab_channels_url",
-    "parse_kaggle_channels_url",
 ]

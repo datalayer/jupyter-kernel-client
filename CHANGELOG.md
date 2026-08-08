@@ -8,36 +8,10 @@
 
 ## Unreleased
 
-### Enhancements made
-
-- Added `KaggleKernelClient` (plus `parse_kaggle_channels_url` and
-  `KaggleKernelClient.from_channels_url`) to connect to a Kaggle interactive
-  notebook kernel. Authenticate with a Kaggle API token passed via the `token`
-  argument or the `KAGGLE_API_TOKEN` environment variable — omitting `kernel_id`
-  then creates a new kernel on the runtime. Alternatively, connect to an existing
-  session with `token=None` (the signed JWT embedded in the proxied `server_url`
-  provides the authentication) by parsing the notebook session's WebSocket
-  *channels* URL directly.
-- Updated `ColabKernelClient` with `parse_colab_channels_url` and
-  `ColabKernelClient.from_channels_url` to connect to an **already-running**
-  Colab kernel by reusing the runtime's WebSocket *channels* URL. Colab exposes
-  no third-party API to provision runtimes, so the runtime must first be started
-  in the browser; `kernel_id` is required.
-- Added `KaggleKernelExecutor` (plus the `KaggleExecutionResult` dataclass) to
-  create and run a Kaggle notebook "from zero" via Kaggle's official batch API
-  (`kernels_push` / status polling / output download). Install with
-  `pip install jupyter-kernel-client[kaggle]`.
-- Added accelerator selection support to `KaggleKernelExecutor.execute(...)`
-  through a new `accelerator` argument (for example `NvidiaTeslaT4` or aliases
-  such as `T4` / `P100`), forwarding the value to Kaggle `kernels_push`.
-
 ### Removed
 
-- Removed the experimental **browser bridge** (`BrowserBridgeServer`,
-  `request_payload`, `ColabBridge`, `ColabConnectionInfo`,
-  `request_colab_connection`) and its `[bridge]` extra. Consumer Colab does not
-  expose a third-party-accessible way to provision or hand off runtimes, so Colab
-  support is now limited to reusing an existing runtime by its channels URL.
+- Moved the Kaggle and Google Colab integrations to `code-sandboxes`. This
+  package now contains only generic Jupyter kernel client functionality.
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
