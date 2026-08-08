@@ -533,8 +533,7 @@ class KernelWebSocketClient(KernelClientABC):
         self._subprotocol = subprotocol
         self._headers = kwargs.pop("headers", {})
         # Extra query parameters to append to the websocket URL. This is used
-        # by non-standard backends (e.g. Google Colab) that require additional
-        # authentication parameters such as ``colab-runtime-proxy-token``.
+        # by non-standard backends that require additional query parameters.
         self._extra_params = kwargs.pop("extra_params", {}) or {}
 
     def __del__(self):
@@ -581,7 +580,7 @@ class KernelWebSocketClient(KernelClientABC):
         params = {"session_id": self.session.session}
         if self.token is not None:
             params['token'] = self.token
-        # Merge backend-specific extra query parameters (e.g. Colab proxy token)
+        # Merge backend-specific extra query parameters.
         # while preserving reserved keys managed by this client.
         if self._extra_params:
             for key, value in self._extra_params.items():

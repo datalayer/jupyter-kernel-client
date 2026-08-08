@@ -50,18 +50,6 @@ module.exports = {
         },
         {
           type: 'doc',
-          docId: 'kaggle',
-          position: 'left',
-          label: 'Kaggle',
-        },
-        {
-          type: 'doc',
-          docId: 'google-colab',
-          position: 'left',
-          label: 'Colab',
-        },
-        {
-          type: 'doc',
           docId: 'konsole',
           position: 'left',
           label: 'Konsole',

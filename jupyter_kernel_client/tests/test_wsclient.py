@@ -105,7 +105,7 @@ def test_start_channels_appends_extra_query_params_without_overriding_reserved(m
         token="real-token",
         timeout=0,
         extra_params={
-            "colab-runtime-proxy-token": "proxy-token",
+            "runtime-proxy-token": "proxy-token",
             "token": "ignored-token",
             "session_id": "ignored-session",
         },
@@ -116,7 +116,7 @@ def test_start_channels_appends_extra_query_params_without_overriding_reserved(m
     parsed = parse_qs(urlparse(captured["url"]).query)
     assert parsed["token"] == ["real-token"]
     assert parsed["session_id"] == [client.session.session]
-    assert parsed["colab-runtime-proxy-token"] == ["proxy-token"]
+    assert parsed["runtime-proxy-token"] == ["proxy-token"]
 
 
 def test_start_channels_ignores_reserved_extra_token_when_kernel_token_is_none(monkeypatch):

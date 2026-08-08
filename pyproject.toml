@@ -37,9 +37,6 @@ dependencies = [
 konsole = [
   "jupyter_console",
 ]
-kaggle = [
-  "kaggle>=1.6",
-]
 test = [
   "ipykernel",
   "jupyter_server>=2.10,<3",
