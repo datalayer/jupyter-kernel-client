@@ -38,7 +38,14 @@ def fetch(
     }
     headers.update(kwargs.pop("headers", {}))
     if token:
-        headers["Authorization"] = f"Bearer {token}"
+        if "Authorization" in headers:
+            # Some provider ingresses (Modal) consume Authorization before the
+            # request reaches Jupyter. Preserve that credential and carry the
+            # Jupyter token in the standard query parameter instead.
+            params = kwargs.setdefault("params", {})
+            params.setdefault("token", token)
+        else:
+            headers["Authorization"] = f"Bearer {token}"
     if "timeout" not in kwargs:
         kwargs["timeout"] = REQUEST_TIMEOUT
     response = f(request, headers=headers, **kwargs)

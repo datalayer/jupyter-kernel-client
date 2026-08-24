@@ -4,8 +4,31 @@
 #
 # BSD 3-Clause License
 
-from jupyter_kernel_client.manager import KernelHttpManager
+from jupyter_kernel_client.manager import KernelHttpManager, fetch
 from jupyter_kernel_client import JupyterKernelClient
+
+
+def test_fetch_preserves_provider_authorization_and_queries_jupyter_token(monkeypatch):
+    captured = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+    def get(url, **kwargs):
+        captured.update(url=url, **kwargs)
+        return Response()
+
+    monkeypatch.setattr("jupyter_kernel_client.manager.requests.get", get)
+
+    fetch(
+        "https://provider.example/api/kernels",
+        token="jupyter-token",
+        headers={"Authorization": "Bearer provider-token"},
+    )
+
+    assert captured["headers"]["Authorization"] == "Bearer provider-token"
+    assert captured["params"]["token"] == "jupyter-token"
 
 
 def test_list_kernels(jupyter_server):
@@ -30,4 +53,3 @@ def test_list_kernels(jupyter_server):
                 found = True
         
         assert found, f"Kernel with id {kernel_id} not found in the list of running kernels."
-
