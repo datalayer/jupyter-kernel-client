@@ -9,32 +9,24 @@
  * Distributed under the terms of the Modified BSD License.
  */
 
-import React from "react";
-import { Box } from '@primer/react';
+import React from 'react';
+import { Box } from '@datalayer/primer-addons';
 
 type Props = {
-  icon1: JSX.Element,
-  icon2: JSX.Element,
-  title: string,
-}
+  icon1: JSX.Element;
+  icon2: JSX.Element;
+  title: string;
+};
 
 export const IconsTitle = (props: Props) => {
   const { icon1, icon2, title } = props;
   return (
-    <>
-      <Box display="flex">
-        <Box>
-          {icon1}
-        </Box>
-        <Box>
-          {icon2}
-        </Box>
-        <Box>
-          {title}
-        </Box>
-      </Box>
-    </>
-  )
-}
+    <Box display="flex">
+      <Box>{icon1}</Box>
+      <Box>{icon2}</Box>
+      <Box>{title}</Box>
+    </Box>
+  );
+};
 
 export default IconsTitle;
