@@ -6,6 +6,16 @@
 
 # Changelog
 
+## 1.0.3
+
+### Fixed
+
+- The websocket listener thread is a daemon thread: a process that opens a kernel
+  connection and never calls `stop_channels()` can still exit.
+- `stop_channels()` sends the close frame and shuts the socket down, waking the
+  listener thread at once, then joins it and closes the socket. It no longer waits
+  for the server's close reply nor, at times, for the join timeout.
+
 ## Unreleased
 
 ### Removed

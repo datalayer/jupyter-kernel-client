@@ -12,12 +12,13 @@ import logging
 import os
 import queue
 import signal
+import socket
 import sys
 import time
 import typing as t
 from enum import Enum
 from getpass import getpass
-from threading import Event, Lock, Thread
+from threading import Event, Lock, Thread, current_thread
 from urllib.parse import urlencode
 
 import websocket  # type:ignore[import-untyped]
@@ -604,7 +605,11 @@ class KernelWebSocketClient(KernelClientABC):
             on_open=self._on_open,
             on_message=self._on_message,
         )
-        self.connection_thread = Thread(target=self._run_websocket)
+        # A daemon thread: a process that never calls stop_channels() must still
+        # be able to exit; stop_channels() closes the socket and joins it.
+        self.connection_thread = Thread(
+            target=self._run_websocket, name="jupyter-kernel-client-websocket", daemon=True
+        )
         self.connection_thread.start()
 
         self.connection_ready.wait(timeout=self.timeout)
@@ -629,15 +634,36 @@ class KernelWebSocketClient(KernelClientABC):
             return
         self.shutting_down = True
 
-        if self.kernel_socket:
-            self.kernel_socket.close()
-            self.kernel_socket = None
+        app = self.kernel_socket
+        self.kernel_socket = None
+        ws = getattr(app, "sock", None)
+        if app is not None:
+            raw = getattr(ws, "sock", None)
+            if raw is None:
+                app.close()
+            else:
+                # Send the close frame, then shut the socket down without closing it:
+                # the listener thread, blocked in select() with no timeout, wakes on the
+                # shutdown and ends run_forever(). Closing the descriptor instead (as
+                # WebSocketApp.close() does) can drop that wake-up and leave it blocked.
+                app.keep_running = False
+                try:
+                    ws.send_close()
+                except Exception:  # noqa: BLE001,S110
+                    pass
+                try:
+                    raw.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
 
-        if self.connection_thread is not None and self.connection_thread.is_alive():
-            self.connection_thread.join(self.timeout)
-            if self.connection_thread.is_alive():
+        thread = self.connection_thread
+        self.connection_thread = None
+        if thread is not None and thread.is_alive() and thread is not current_thread():
+            thread.join(self.timeout)
+            if thread.is_alive():
                 self.log.warning("Failed to stop websocket connection thread.")
-            self.connection_thread = None
+        if ws is not None:
+            ws.shutdown()
 
     @property
     def channels_running(self) -> bool:
