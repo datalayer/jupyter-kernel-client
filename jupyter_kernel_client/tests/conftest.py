@@ -2,7 +2,6 @@
 #
 # BSD 3-Clause License
 
-import io
 import logging
 import secrets
 import signal
@@ -74,11 +73,5 @@ def jupyter_server(tmp_path: Path) -> t.Generator[tuple[str, str], t.Any, t.Any]
             except TimeoutExpired:
                 if jp_server.poll() is None:
                     jp_server.terminate()
-    try:
-        print_stream(out.read())
-    except io.UnsupportedOperation:
-        ...
-    try:
-        print_stream(err.read())
-    except io.UnsupportedOperation:
-        ...
+    print_stream(stdout.read_bytes())
+    print_stream(stderr.read_bytes())
