@@ -126,7 +126,7 @@ module.exports = {
             },
             {
               label: 'Bluesky',
-              href: 'https://assets.datalayer.tech/logos-social-grey/youtube.svg',
+              href: 'https://assets.datalayer.tech/logos-social-grey/bluesky.svg',
             },
             {
               label: 'LinkedIn',
@@ -140,14 +140,6 @@ module.exports = {
             {
               label: 'Datalayer AI',
               href: 'https://datalayer.ai',
-            },
-            {
-              label: 'Datalayer App',
-              href: 'https://datalayer.app',
-            },
-            {
-              label: 'Datalayer Docs',
-              href: 'https://docs.datalayer.app',
             },
             {
               label: 'Datalayer Blog',
