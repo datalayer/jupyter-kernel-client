@@ -18,6 +18,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- A websocket that drops without a close frame (a half-open connection) is now
+  detected: `KernelWebSocketClient` takes a `ping_timeout` (default 20 seconds)
+  and treats an unanswered ping as a lost connection. Before, pings were sent
+  but the pongs were never checked, so `connection_ready` stayed set for good.
+
 ### Removed
 
 - Moved the Kaggle and Google Colab integrations to `code-sandboxes`. This

@@ -473,6 +473,12 @@ class KernelWebSocketClient(KernelClientABC):
     ping_interval: float
         Interval in seconds to send a ping message to the server; default 60.
         If it is set to 0, no ping message will be sent.
+    ping_timeout: float | None
+        Time in seconds to wait for the pong answering a ping before the
+        connection is treated as lost and closed; default 20. Without it a
+        connection that drops with no close frame (a half-open TCP connection)
+        is never noticed. ``None`` or 0 disables the check, as does a value
+        that is not smaller than ``ping_interval``.
     reconnect_interval: float
         Amount of time to wait before trying to reconnect the websocket;
         default 0 means no reconnection.
@@ -495,6 +501,7 @@ class KernelWebSocketClient(KernelClientABC):
         log: logging.Logger | None = None,
         debug_session: bool = False,
         ping_interval: float = 60,
+        ping_timeout: float | None = 20,
         reconnect_interval: int = 0,
         subprotocol: JupyterSubprotocol | None = JupyterSubprotocol.DEFAULT,
         **kwargs,
@@ -511,6 +518,7 @@ class KernelWebSocketClient(KernelClientABC):
         self._message_received = Event()
         self.interrupt_thread = None
         self.ping_interval: float = ping_interval
+        self.ping_timeout: float | None = ping_timeout
         self.reconnect_interval = reconnect_interval
         self.timeout = timeout
         self.session = WSSession(log=self.log, subprotocol=subprotocol)
@@ -1323,8 +1331,16 @@ class KernelWebSocketClient(KernelClientABC):
             return
         try:
             self.log.debug(f"kernel socket: {self.kernel_socket.url}")
+            # websocket-client sends pings on ``ping_interval`` but only checks for
+            # the pongs when ``ping_timeout`` is set, and requires it to be smaller
+            # than the interval.
+            ping_timeout = self.ping_timeout
+            if not ping_timeout or not 0 < ping_timeout < self.ping_interval:
+                ping_timeout = None
             self.kernel_socket.run_forever(
-                ping_interval=self.ping_interval, reconnect=self.reconnect_interval
+                ping_interval=self.ping_interval,
+                ping_timeout=ping_timeout,
+                reconnect=self.reconnect_interval,
             )
         except ValueError as e:
             self.log.error(
