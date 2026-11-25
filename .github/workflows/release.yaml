@@ -14,7 +14,10 @@ on:
       - 'v*'
 
 concurrency:
-  group: release-${{ github.ref }}
+  # Its own prefix: build.yaml, called below, runs under this workflow's name, and its group
+  # (`Release-<ref>`, cancelling in progress) matched `release-<ref>` (group names ignore
+  # case), so the tests cancelled the release that called them.
+  group: publish-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -40,13 +43,22 @@ jobs:
           echo "tag=$tag version=$version"
           test "$tag" = "$version"
 
-      - name: Find whether it is published yet
+      - name: Find whether it is published yet, both its sdist and its wheel
         id: plan
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
-          status="$(curl -sL -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/jupyter-kernel-client/$version/json")"
-          if [ "$status" = "200" ]; then
+          # PyPI answers 200 as soon as one file of a version is there: a version is published
+          # only when its sdist and its wheel both are, so a partial upload is published again
+          # (skip-existing uploads only the missing file).
+          kinds="$(curl -sL "https://pypi.org/pypi/jupyter-kernel-client/$version/json" \
+            | python -c "import json,sys
+          try:
+              print(' '.join(sorted({u['packagetype'] for u in json.load(sys.stdin).get('urls', [])})))
+          except ValueError:
+              print('')")"
+          echo "PyPI files of $version: ${kinds:-none}"
+          if [ "$kinds" = "bdist_wheel sdist" ]; then
             echo "PyPI: jupyter-kernel-client $version is already published, skipping"
             echo "python=" >> "$GITHUB_OUTPUT"
           else
@@ -100,7 +112,14 @@ jobs:
   release:
     name: GitHub release
     needs: [check_version, tests, pypi]
-    if: always() && needs.check_version.result == 'success' && needs.tests.result == 'success' && needs.pypi.result != 'failure'
+    # Only for a version on PyPI: published now, or found published already (then the publish
+    # job is skipped on purpose); never after a failed, cancelled or skipped packaging.
+    if: >-
+      always()
+      && needs.check_version.result == 'success'
+      && needs.tests.result == 'success'
+      && (needs.pypi.result == 'success'
+          || (needs.pypi.result == 'skipped' && needs.check_version.outputs.python == ''))
     runs-on: ubuntu-latest
     permissions:
       contents: write
