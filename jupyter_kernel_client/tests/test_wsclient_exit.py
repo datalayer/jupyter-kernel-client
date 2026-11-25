@@ -120,3 +120,41 @@ def test_stop_channels_joins_the_websocket_thread(ws_server):
     assert not thread.is_alive()
     assert client.connection_thread is None
     assert client.kernel_socket is None
+
+
+def _open_client(ws_server, **kwargs):
+    client = KernelWebSocketClient(endpoint=ws_server.endpoint, timeout=5, **kwargs)
+    client.start_channels(shell=False, iopub=False, stdin=False, hb=False, control=False)
+    assert client.connection_ready.is_set(), "websocket did not open"
+    return client
+
+
+def _wait_until_lost(client, seconds):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if not client.connection_ready.is_set():
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def test_unanswered_ping_marks_the_connection_lost(ws_server):
+    # The server keeps the TCP connection open and never answers a ping, as a
+    # half-open connection does.
+    client = _open_client(ws_server, ping_interval=1, ping_timeout=0.5)
+    try:
+        assert _wait_until_lost(client, 6), "a dead connection was not detected"
+    finally:
+        client.stop_channels()
+
+
+@pytest.mark.parametrize("ping_timeout", [None, 5])
+def test_ping_timeout_disabled_or_not_below_interval_keeps_the_connection(ws_server, ping_timeout):
+    # Disabled, or not smaller than the interval (which websocket-client
+    # rejects): no pong check, and the listener thread keeps running.
+    client = _open_client(ws_server, ping_interval=1, ping_timeout=ping_timeout)
+    try:
+        assert not _wait_until_lost(client, 2.5)
+        assert client.connection_thread.is_alive()
+    finally:
+        client.stop_channels()
