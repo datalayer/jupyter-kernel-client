@@ -1,0 +1,118 @@
+# Copyright (c) 2023-2026 Datalayer, Inc.
+# Distributed under the terms of the Modified BSD License.
+
+# Publishes the release a tag names to PyPI, with no stored token: PyPI trusts this
+# workflow file (OIDC trusted publishing, through the `pypi` environment). The tag must
+# name the version in jupyter_kernel_client/__version__.py; the tests of build.yaml run on
+# the tagged commit first, and a version already published is skipped. See RELEASE.md.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check_version:
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.plan.outputs.python }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Check the tag names the version the package carries
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(python -c "import re;print(re.search(r'__version__\s*=\s*[\"\']([^\"\']+)', open('jupyter_kernel_client/__version__.py').read())[1])")"
+          echo "tag=$tag version=$version"
+          test "$tag" = "$version"
+
+      - name: Find whether it is published yet
+        id: plan
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          status="$(curl -sL -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/jupyter-kernel-client/$version/json")"
+          if [ "$status" = "200" ]; then
+            echo "PyPI: jupyter-kernel-client $version is already published, skipping"
+            echo "python=" >> "$GITHUB_OUTPUT"
+          else
+            echo "PyPI: jupyter-kernel-client $version will be published"
+            echo "python=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+  tests:
+    needs: check_version
+    uses: ./.github/workflows/build.yaml
+
+  package:
+    needs: [check_version, tests]
+    if: needs.check_version.outputs.python != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Build the sdist and the wheel
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip build
+          python -m build --sdist --wheel --outdir dist .
+          ls -la dist
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: python
+          path: dist/*
+
+  pypi:
+    needs: package
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: python
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Covers a re-run after a partial upload.
+          skip-existing: true
+
+  release:
+    name: GitHub release
+    needs: [check_version, tests, pypi]
+    if: always() && needs.check_version.result == 'success' && needs.tests.result == 'success' && needs.pypi.result != 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Create the release with generated notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && exit 0
+          gh release create "$GITHUB_REF_NAME" --title "Release $version" --generate-notes \
+            --notes "- [PyPI jupyter-kernel-client](https://pypi.org/project/jupyter-kernel-client/$version/)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -4,6 +4,8 @@ on:
   push:
     branches: ["main"]
   pull_request:
+  # Called by release.yaml on the tagged commit: a tag whose tests fail publishes nothing.
+  workflow_call:
 
 defaults:
   run:
@@ -92,23 +94,3 @@ jobs:
           pip install my_server_extension.tar.gz
           pip list 2>&1 | grep -ie "jupyter_kernel_client"
           python -c "import jupyter_kernel_client"
-
-  check_release:
-    needs: test_sdist
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Base Setup
-        uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
-      - name: Install Dependencies
-        run: |
-          pip install -e .
-      - name: Check Release
-        uses: jupyter-server/jupyter_releaser/.github/actions/check-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload Distributions
-        uses: actions/upload-artifact@v5
-        with:
-          name: jupyter_kernel_client-releaser-dist-${{ github.run_number }}
-          path: .jupyter_releaser_checkout/dist

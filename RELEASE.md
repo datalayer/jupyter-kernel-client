@@ -6,50 +6,45 @@
 
 # Making a new release of jupyter_kernel_client
 
-The extension can be published to `PyPI` manually or using the [Jupyter Releaser](https://github.com/jupyter-server/jupyter_releaser).
+A tag releases `jupyter-kernel-client` to PyPI, with no stored publishing token: PyPI
+trusts `.github/workflows/release.yaml` through OIDC (trusted publishing, the `pypi`
+environment). The version lives in `jupyter_kernel_client/__version__.py`, which Hatch
+reads; the tag must name it.
 
-## Manual release
+## Steps
 
-### Python package
+1. Bump `__version__` in `jupyter_kernel_client/__version__.py` (and the CHANGELOG) on a
+   branch, and open a pull request.
 
-This repository can be distributed as Python
-package. All of the Python
-packaging instructions in the `pyproject.toml` file to wrap your extension in a
-Python package. Before generating a package, we first need to install `build`.
+1. Squash-merge it once its checks are green, then tag the squash commit on `main` and
+   push the tag:
+
+   ```bash
+   git checkout main && git pull
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+
+1. The `Release` workflow checks that the tag names the version, runs the tests of
+   `build.yaml` on the tagged commit, builds the sdist and the wheel, publishes them to PyPI
+   unless that version is published already, and creates a GitHub release with generated
+   notes. A tag whose tests fail publishes nothing.
+
+## Trusted publishing
+
+PyPI project `jupyter-kernel-client`: owner `datalayer`, repository
+`jupyter-kernel-client`, workflow `release.yaml`, environment `pypi`. The registry's
+configuration must match the repository, the workflow file name and the environment
+exactly; renaming any of them means updating the trusted publisher.
+
+## Building by hand
+
+To check the packages locally:
 
 ```bash
-pip install build twine
-```
-
-To create a Python source package (`.tar.gz`) and the binary package (`.whl`) in the `dist/` directory, do:
-
-```bash
+pip install build
 python -m build
 ```
-
-Then to upload the package to PyPI, do:
-
-```bash
-twine upload dist/*
-```
-
-## Automated releases with the Jupyter Releaser
-
-> [!NOTE]
-> The extension repository is compatible with the Jupyter Releaser. But
-> the GitHub repository and PyPI may need to be properly set up. Please
-> follow the instructions of the Jupyter Releaser [checklist](https://jupyter-releaser.readthedocs.io/en/latest/how_to_guides/convert_repo_from_repo.html).
-
-Here is a summary of the steps to cut a new release:
-
-- Go to the Actions panel
-- Run the "Step 1: Prep Release" workflow
-- Check the draft changelog
-- Run the "Step 2: Publish Release" workflow
-
-> [!NOTE]
-> Check out the [workflow documentation](https://jupyter-releaser.readthedocs.io/en/latest/get_started/making_release_from_repo.html)
-> for more information.
 
 ## Publishing to `conda-forge`
 
